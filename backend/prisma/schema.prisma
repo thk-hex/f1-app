@@ -23,3 +23,18 @@ model Champion {
 
   @@index([season])
 }
+
+model RaceWinner {
+  id              Int      @id @default(autoincrement())
+  season          String
+  round           String
+  gpName          String
+  winnerId        String
+  winnerGivenName String
+  winnerFamilyName String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([season, round], name: "season_round")
+  @@index([season])
+}

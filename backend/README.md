@@ -93,6 +93,7 @@ $ npm run db:seed
 ## API Endpoints
 
 - `GET /champions`: Get a list of all F1 champions
+- `GET /race-winners/:year`: Get a list of all race winners for a specific year
 
 ## Implementation Details
 
@@ -101,6 +102,11 @@ The Champions module implements a caching strategy:
 2. If no data is found, it fetches from the external API with rate limiting
 3. The fetched data is stored in the database for future requests
 4. Subsequent requests are served directly from the database
+
+The Race Winners module follows the same caching strategy:
+1. Data is stored per season in the database
+2. The API endpoint accepts a year parameter to fetch race winners for that season
+3. Rate limiting is applied to external API requests to avoid hitting rate limits
 
 ## Project setup
 
