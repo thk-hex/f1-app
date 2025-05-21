@@ -33,7 +33,7 @@ async function makeRateLimitedRequest(url: string): Promise<any> {
 }
 
 // Function to map API response to Champion data
-function mapToChampion(data: any): { season: string; givenName: string; familyName: string } | null {
+function mapToChampion(data: any): { season: string; givenName: string; familyName: string; driverId: string } | null {
   if (!data.MRData?.StandingsTable?.season) {
     return null;
   }
@@ -46,6 +46,9 @@ function mapToChampion(data: any): { season: string; givenName: string; familyNa
     familyName:
       data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
         ?.Driver?.familyName || '',
+    driverId:
+      data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
+        ?.Driver?.driverId || '',
   };
 }
 
@@ -73,7 +76,7 @@ async function main() {
       const champion = mapToChampion(response);
       
       if (champion && champion.season) {
-        console.log(`Upserting champion for season ${champion.season}: ${champion.givenName} ${champion.familyName}`);
+        console.log(`Upserting champion for season ${champion.season}: ${champion.givenName} ${champion.familyName} (${champion.driverId})`);
         
         // Store in database
         await prisma.champion.upsert({
@@ -81,11 +84,13 @@ async function main() {
           update: {
             givenName: champion.givenName,
             familyName: champion.familyName,
+            driverId: champion.driverId,
           },
           create: {
             season: champion.season,
             givenName: champion.givenName,
             familyName: champion.familyName,
+            driverId: champion.driverId,
           },
         });
       }

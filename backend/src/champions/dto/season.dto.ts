@@ -13,4 +13,8 @@ export class SeasonDto {
   @IsString()
   @Expose()
   familyName: string;
+
+  @IsString()
+  @Expose()
+  driverId: string;
 }

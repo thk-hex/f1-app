@@ -18,6 +18,7 @@ model Champion {
   season     String   @unique
   givenName  String
   familyName String
+  driverId   String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

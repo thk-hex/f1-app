@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { ChampionsMapper } from './champions.mapper';
 import { SeasonDto } from './dto/season.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -28,6 +27,7 @@ export class ChampionsService {
         season: champion.season,
         givenName: champion.givenName,
         familyName: champion.familyName,
+        driverId: champion.driverId || '',
       }));
     }
 
@@ -59,11 +59,13 @@ export class ChampionsService {
             update: {
               givenName: seasonDto.givenName,
               familyName: seasonDto.familyName,
+              driverId: seasonDto.driverId,
             },
             create: {
               season: seasonDto.season,
               givenName: seasonDto.givenName,
               familyName: seasonDto.familyName,
+              driverId: seasonDto.driverId,
             },
           });
         }
