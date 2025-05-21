@@ -6,6 +6,9 @@
     
     COPY package*.json ./
     RUN npm ci
+
+    COPY prisma ./prisma
+    RUN npx prisma generate
     
     COPY . .
     RUN npm run build
@@ -18,6 +21,7 @@
     COPY --from=builder ./package*.json ./
     COPY --from=builder /node_modules ./node_modules
     COPY --from=builder /dist ./dist
+    COPY --from=builder /prisma ./prisma
     
     EXPOSE 3000
     ENV NODE_ENV production
