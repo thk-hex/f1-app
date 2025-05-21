@@ -29,7 +29,10 @@ describe('ChampionsService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn(),
+            get: jest.fn((key) => {
+              if (key === 'GP_START_YEAR') return 2005;
+              return undefined;
+            }),
           },
         },
         {
@@ -61,7 +64,7 @@ describe('ChampionsService', () => {
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
     // Mock Date.getFullYear to return a consistent value
-    jest.spyOn(Date.prototype, 'getFullYear').mockReturnValue(2025);
+    jest.spyOn(Date.prototype, 'getFullYear').mockReturnValue(2006);
   });
 
   afterEach(() => {
@@ -98,7 +101,11 @@ describe('ChampionsService', () => {
       (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
       
       const baseUrl = 'https://api.jolpi.ca/ergast/f1';
-      (configService.get as jest.Mock).mockReturnValue(baseUrl);
+      (configService.get as jest.Mock).mockImplementation((key) => {
+        if (key === 'BASE_URL') return baseUrl;
+        if (key === 'GP_START_YEAR') return 2005;
+        return undefined;
+      });
       
       const mockData2005 = { MRData: { StandingsTable: { season: '2005' } } };
       const mockData2006 = { MRData: { StandingsTable: { season: '2006' } } };
@@ -112,11 +119,14 @@ describe('ChampionsService', () => {
       mockDto2006.givenName = 'Michael';
       mockDto2006.familyName = 'Schumacher';
 
-      // Mock the private method to just return the data without rate limiting
+      // Create a spy on the makeRateLimitedRequest method before replacing its implementation
       const makeRateLimitedRequestSpy = jest.spyOn(
         service as any,
         'makeRateLimitedRequest',
-      ).mockImplementation((url: string) => {
+      );
+      
+      // Override the implementation of the spied method
+      makeRateLimitedRequestSpy.mockImplementation((url: string) => {
         if (url.includes('2005')) return Promise.resolve(mockData2005);
         if (url.includes('2006')) return Promise.resolve(mockData2006);
         return Promise.resolve({});
@@ -158,7 +168,11 @@ describe('ChampionsService', () => {
 
     it('should throw an error if BASE_URL is not configured', async () => {
       (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
-      (configService.get as jest.Mock).mockReturnValue(undefined);
+      (configService.get as jest.Mock).mockImplementation((key) => {
+        if (key === 'GP_START_YEAR') return 2005;
+        return undefined;
+      });
+      
       await expect(service.getChampions()).rejects.toThrow(
         'BASE_URL not configured in .env file',
       );
@@ -169,7 +183,11 @@ describe('ChampionsService', () => {
       (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
       
       const baseUrl = 'https://api.jolpi.ca/ergast/f1';
-      (configService.get as jest.Mock).mockReturnValue(baseUrl);
+      (configService.get as jest.Mock).mockImplementation((key) => {
+        if (key === 'BASE_URL') return baseUrl;
+        if (key === 'GP_START_YEAR') return 2005;
+        return undefined;
+      });
       
       const mockData2006 = { MRData: { StandingsTable: { season: '2006' } } };
       const mockDto2006 = new SeasonDto();
@@ -177,11 +195,13 @@ describe('ChampionsService', () => {
       mockDto2006.givenName = 'Michael';
       mockDto2006.familyName = 'Schumacher';
       
-      // Mock the private method to simulate a failure for 2005 but success for 2006
+      // Mock the private method with proper error/success behavior
       const makeRateLimitedRequestSpy = jest.spyOn(
         service as any,
         'makeRateLimitedRequest',
-      ).mockImplementation((url: string) => {
+      );
+
+      makeRateLimitedRequestSpy.mockImplementation((url: string) => {
         if (url.includes('2005')) {
           return Promise.reject(new Error('API error for 2005'));
         }
