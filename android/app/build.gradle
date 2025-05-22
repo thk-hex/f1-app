@@ -15,7 +15,7 @@ android {
         versionCode 1
         versionName "1.0"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "com.f1champions.app.HiltTestRunner"
         vectorDrawables {
             useSupportLibrary true
         }
@@ -43,6 +43,11 @@ android {
     packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
         }
     }
 }
@@ -84,10 +89,28 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
     
-    // Testing
+    // Unit Tests
     testImplementation 'junit:junit:4.13.2'
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+    testImplementation "io.mockk:mockk:1.13.9"
+    testImplementation "app.cash.turbine:turbine:1.0.0"
+    testImplementation "com.google.truth:truth:1.1.5"
+    testImplementation "androidx.arch.core:core-testing:2.2.0"
+    
+    // Android Tests
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
+    androidTestImplementation "com.google.dagger:hilt-android-testing:$hilt_version"
+    androidTestImplementation "androidx.arch.core:core-testing:2.2.0"
+    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+    androidTestImplementation "io.mockk:mockk-android:1.13.9"
+    androidTestImplementation "app.cash.turbine:turbine:1.0.0"
+    androidTestImplementation "com.google.truth:truth:1.1.5"
+    
+    kspAndroidTest "com.google.dagger:hilt-android-compiler:$hilt_version"
+    
+    // Debug implementations
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
+    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
 } 
