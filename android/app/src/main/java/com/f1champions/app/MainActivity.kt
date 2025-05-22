@@ -46,16 +46,19 @@ class MainActivity : ComponentActivity() {
                         
                         composable("champions") {
                             ChampionsScreen(
-                                onSeasonClick = { season ->
-                                    navController.navigate("race_winners/$season")
+                                onSeasonClick = { season, championId ->
+                                    navController.navigate("race_winners/$season/$championId")
                                 }
                             )
                         }
                         
                         composable(
-                            route = "race_winners/{season}",
+                            route = "race_winners/{season}/{championId}",
                             arguments = listOf(
                                 navArgument("season") {
+                                    type = NavType.StringType
+                                },
+                                navArgument("championId") {
                                     type = NavType.StringType
                                 }
                             )

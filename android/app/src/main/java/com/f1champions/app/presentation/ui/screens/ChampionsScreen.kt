@@ -30,7 +30,7 @@ import com.f1champions.app.presentation.viewmodel.ChampionsViewModel
 
 @Composable
 fun ChampionsScreen(
-    onSeasonClick: (String) -> Unit,
+    onSeasonClick: (String, String) -> Unit,
     viewModel: ChampionsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -65,7 +65,7 @@ fun ChampionsScreen(
 @Composable
 fun ChampionsList(
     champions: List<Season>,
-    onSeasonClick: (String) -> Unit
+    onSeasonClick: (String, String) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
@@ -82,13 +82,13 @@ fun ChampionsList(
 @Composable
 fun ChampionItem(
     season: Season,
-    onSeasonClick: (String) -> Unit
+    onSeasonClick: (String, String) -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .clickable { onSeasonClick(season.year) },
+            .clickable { onSeasonClick(season.year, season.championId) },
         elevation = 4.dp
     ) {
         Column(
