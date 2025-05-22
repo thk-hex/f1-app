@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import com.f1champions.app.domain.model.Race
 import com.f1champions.app.presentation.ui.RaceWinnersUiState
@@ -55,10 +56,8 @@ class RaceWinnersScreenTest {
         composeTestRule.onNodeWithText("British GP").assertIsDisplayed()
         composeTestRule.onNodeWithText("Lewis Hamilton").assertIsDisplayed()
         
-        // Test back navigation
-        // Find and click the back button (usually an arrow icon)
-        // For simplicity using the entire TopAppBar
-        composeTestRule.onNodeWithText("Race Winners (2023)").performClick()
+        // Test back navigation by clicking the back button
+        composeTestRule.onNodeWithContentDescription("Back").performClick()
         verify { onBackClick() }
     }
     

@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import com.f1champions.app.domain.model.Season
 import com.f1champions.app.presentation.ui.ChampionsUiState
@@ -48,7 +49,8 @@ class ChampionsScreenTest {
         
         // Then
         composeTestRule.onNodeWithText("2023").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Max Verstappen").assertIsDisplayed()
+        // Verify Max Verstappen appears in the list at least once
+        composeTestRule.onAllNodesWithText("Max Verstappen")[0].assertIsDisplayed()
         composeTestRule.onNodeWithText("2022").assertIsDisplayed()
         
         // Test click handling

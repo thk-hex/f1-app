@@ -10,9 +10,7 @@ import dagger.Provides
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.flowOf
 import javax.inject.Singleton
 
 @Module
@@ -61,50 +59,7 @@ object TestAppModule {
         return mockApiService
     }
     
-    @Provides
-    @Singleton
-    fun provideTestF1Repository(): F1Repository {
-        // Alternative approach: Use a fake repository instead of the real implementation
-        val mockRepository = mockk<F1Repository>()
-        
-        every { mockRepository.getChampions() } returns flowOf(
-            Result.success(
-                listOf(
-                    Season(
-                        year = "2023",
-                        championName = "Max Verstappen",
-                        championId = "verstappen"
-                    ),
-                    Season(
-                        year = "2022",
-                        championName = "Max Verstappen",
-                        championId = "verstappen"
-                    )
-                )
-            )
-        )
-        
-        every { mockRepository.getRaceWinners(any()) } returns flowOf(
-            Result.success(
-                listOf(
-                    Race(
-                        grandPrixName = "Monaco GP",
-                        winnerName = "Max Verstappen",
-                        winnerId = "verstappen"
-                    ),
-                    Race(
-                        grandPrixName = "British GP",
-                        winnerName = "Lewis Hamilton",
-                        winnerId = "hamilton"
-                    )
-                )
-            )
-        )
-        
-        return mockRepository
-    }
-    
-    // For integration tests, we can use the real repository with mock API
+    // For integration tests, we use the real repository implementation with mock API
     @Provides
     @Singleton
     fun provideF1Repository(apiService: F1ApiService): F1Repository {
