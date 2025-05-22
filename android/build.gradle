@@ -5,12 +5,12 @@ buildscript {
         compose_compiler_version = '1.5.11'
         kotlin_version = '1.9.23'
         hilt_version = '2.51'
-        lifecycle_version = '2.7.0'
+        lifecycle_version = '2.9.0'
         retrofit_version = '2.9.0'
         okhttp_version = '4.12.0'
-        moshi_version = '1.15.1'
+        moshi_version = '1.15.2'
         coroutines_version = '1.8.0'
-        nav_version = '2.7.7'
+        nav_version = '2.9.0'
         ksp_version = '1.9.23-1.0.19'
     }
 
@@ -19,7 +19,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.7.2'
+        classpath 'com.android.tools.build:gradle:8.9.3'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "com.google.dagger:hilt-android-gradle-plugin:$hilt_version"
         classpath "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:$ksp_version"
