@@ -21,8 +21,9 @@ class RaceWinnersViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val season: String = checkNotNull(savedStateHandle["season"])
+    private val championId: String = checkNotNull(savedStateHandle["championId"])
     
-    private val _uiState = MutableStateFlow(RaceWinnersUiState(season = season))
+    private val _uiState = MutableStateFlow(RaceWinnersUiState(season = season, championId = championId))
     val uiState: StateFlow<RaceWinnersUiState> = _uiState.asStateFlow()
 
     init {
@@ -33,6 +34,7 @@ class RaceWinnersViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = RaceWinnersUiState(
                 season = season,
+                championId = championId,
                 raceWinners = UiState.Loading
             )
             
@@ -44,6 +46,7 @@ class RaceWinnersViewModel @Inject constructor(
                 
                 _uiState.value = RaceWinnersUiState(
                     season = season,
+                    championId = championId,
                     raceWinners = newState
                 )
             }

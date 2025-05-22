@@ -15,5 +15,6 @@ data class ChampionsUiState(
 
 data class RaceWinnersUiState(
     val season: String = "",
+    val championId: String = "",
     val raceWinners: UiState<List<Race>> = UiState.Loading
 ) 

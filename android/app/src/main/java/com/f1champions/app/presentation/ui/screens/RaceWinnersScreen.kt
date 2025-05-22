@@ -1,5 +1,6 @@
 package com.f1champions.app.presentation.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -72,7 +75,8 @@ fun RaceWinnersScreen(
                     onRetryClick = { viewModel.fetchRaceWinners() }
                 )
                 is UiState.Success -> RaceWinnersList(
-                    races = state.data
+                    races = state.data,
+                    championId = uiState.championId
                 )
             }
         }
@@ -81,21 +85,29 @@ fun RaceWinnersScreen(
 
 @Composable
 fun RaceWinnersList(
-    races: List<Race>
+    races: List<Race>,
+    championId: String
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
         items(races) { race ->
-            RaceWinnerItem(race = race)
+            RaceWinnerItem(
+                race = race,
+                isChampion = race.winnerId == championId
+            )
         }
     }
 }
 
 @Composable
 fun RaceWinnerItem(
-    race: Race
+    race: Race,
+    isChampion: Boolean
 ) {
+    val f1Red = colorResource(id = R.color.f1_red)
+    val championBackground = f1Red.copy(alpha = 0.1f)
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -103,7 +115,10 @@ fun RaceWinnerItem(
         elevation = 4.dp
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(if (isChampion) championBackground else Color.Transparent)
+                .padding(16.dp)
         ) {
             Text(
                 text = race.grandPrixName,
@@ -112,7 +127,8 @@ fun RaceWinnerItem(
             )
             Text(
                 text = race.winnerName,
-                style = MaterialTheme.typography.body1
+                style = MaterialTheme.typography.body1,
+                color = if (isChampion) f1Red else MaterialTheme.colors.onSurface
             )
         }
     }
