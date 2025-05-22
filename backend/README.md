@@ -95,6 +95,15 @@ $ npm run db:seed
 - `GET /champions`: Get a list of all F1 champions
 - `GET /race-winners/:year`: Get a list of all race winners for a specific year
 
+## API Documentation
+
+The API is documented using OpenAPI (Swagger):
+
+- **Swagger UI**: Access interactive API documentation at `http://localhost:3000/api`
+- **OpenAPI JSON**: Get the OpenAPI specification in JSON format at `http://localhost:3000/api-json`
+
+You can use the OpenAPI JSON to generate client code for your frontend application.
+
 ## Implementation Details
 
 The Champions module implements a caching strategy:
