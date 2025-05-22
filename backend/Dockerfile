@@ -11,12 +11,9 @@ COPY prisma ./prisma
 RUN npx prisma generate
     
 COPY . .
-# Debug: Show files before building
-RUN ls -la
+
 RUN npm run build
-# Debug: Show build output
-RUN ls -la dist/
-    
+
 # --- Runtime Stage ---
 FROM node:lts-slim
     
@@ -30,14 +27,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
     
-# Debug: Show files in runtime container
-RUN ls -la
-RUN ls -la dist/ || echo "dist directory is missing or empty"
-    
 EXPOSE 3000
 ENV NODE_ENV production
 RUN adduser --system --group appuser
 USER appuser
 
-# Fix: Use the correct path to main.js
 CMD ["node", "dist/src/main.js"]
