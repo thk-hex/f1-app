@@ -4,7 +4,6 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { of, throwError } from 'rxjs';
 import { RaceWinnersMapper } from './race-winners.mapper';
-import { RaceDto } from './dto/race.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 describe('RaceWinnersService', () => {
