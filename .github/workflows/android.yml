@@ -12,9 +12,14 @@ on:
       - 'android/**'
       - '.github/workflows/android.yml'
 
+# Cancel outdated runs when new commits are pushed to the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
-    name: Run Tests
+  android-tests:
+    name: Run Android Tests
     runs-on: ubuntu-latest
     
     steps:
@@ -61,16 +66,17 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: android-test-results
+        name: android-test-results-${{ github.run_number }}
         path: |
           android/app/build/reports/tests/
           android/app/build/reports/jacoco/
           android/app/build/reports/lint-results-debug.html
+        retention-days: 7
           
-  build:
-    name: Build APK
+  android-build:
+    name: Build Android APK
     runs-on: ubuntu-latest
-    needs: test
+    needs: android-tests
     
     steps:
     - name: Checkout code
@@ -106,13 +112,16 @@ jobs:
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: android-apk
+        name: android-apk-${{ github.run_number }}
         path: android/app/build/outputs/apk/debug/*.apk
+        retention-days: 7
         
-  instrumented-test:
-    name: Run Instrumented Tests
+  android-instrumented-tests:
+    name: Run Android Instrumented Tests
     runs-on: ubuntu-latest
-    needs: test
+    needs: android-tests
+    # Only run instrumented tests on main branch or when PR has specific label
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || contains(github.event.pull_request.labels.*.name, 'run-instrumented-tests')
     
     steps:
     - name: Checkout code
@@ -154,7 +163,7 @@ jobs:
         path: |
           ~/.android/avd/*
           ~/.android/adb*
-        key: avd-34
+        key: avd-34-${{ runner.os }}
         
     - name: Create AVD and generate snapshot for caching
       if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -178,11 +187,12 @@ jobs:
         emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         disable-animations: true
         working-directory: android
-        script: ./gradlew connectedDebugAndroidTest
+        script: ./gradlew connectedDebugAndroidTest --continue
         
     - name: Upload instrumented test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: android-instrumented-test-results
-        path: android/app/build/reports/androidTests/ 
+        name: android-instrumented-test-results-${{ github.run_number }}
+        path: android/app/build/reports/androidTests/
+        retention-days: 7 
