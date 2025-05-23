@@ -2,26 +2,6 @@
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
-
 # F1 Champions Backend
 
 ## Description
@@ -32,15 +12,19 @@ This is the backend service for the F1 Champions application. It provides data a
 
 The application uses PostgreSQL as its database. Before running the application, make sure you have PostgreSQL installed and running.
 
-1. Run database migrations:
-   ```bash
-   npm run prisma:migrate
-   ```
+```bash
+# Generate Prisma client
+$ npm run prisma:generate
 
-2. (Optional) Seed the database with initial data:
-   ```bash
-   npm run db:seed
-   ```
+# Run migrations
+$ npm run prisma:migrate
+
+# Open Prisma Studio
+$ npm run prisma:studio
+
+# Seed the database
+$ npm run db:seed
+```
 
 ## Installation
 
@@ -74,51 +58,33 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Database Commands
-
-```bash
-# Generate Prisma client
-$ npm run prisma:generate
-
-# Run migrations
-$ npm run prisma:migrate
-
-# Open Prisma Studio
-$ npm run prisma:studio
-
-# Seed the database
-$ npm run db:seed
-```
-
 ## API Endpoints
 
 - `GET /champions`: Get a list of all F1 champions
-- `GET /race-winners/:year`: Get a list of all race winners for a specific year
+- `GET /race-winners/year`: Get a list of all race winners for a specific year
 
 ## API Documentation
 
 The API is documented using OpenAPI (Swagger):
 
 - **Swagger UI**: Access interactive API documentation at `http://localhost:3000/api`
+- **OpenAPI YAML**: Get the OpenAPI specification in YAML format at `http://localhost:3000/api-yaml`
 - **OpenAPI JSON**: Get the OpenAPI specification in JSON format at `http://localhost:3000/api-json`
 
-You can use the OpenAPI JSON to generate client code for your frontend application.
+You can use the OpenAPI YAML/JSON to generate client code for your frontend application.
 
 ## Implementation Details
 
-The Champions module implements a caching strategy:
+The Champions module:
 1. On first request, it checks if data exists in the database
 2. If no data is found, it fetches from the external API with rate limiting
 3. The fetched data is stored in the database for future requests
 4. Subsequent requests are served directly from the database
 
-The Race Winners module follows the same caching strategy:
+The Race Winners module:
 1. Data is stored per season in the database
 2. The API endpoint accepts a year parameter to fetch race winners for that season
 3. Rate limiting is applied to external API requests to avoid hitting rate limits
 
-## Project setup
-
-```bash
-$ npm install
-```
+## Trade-offs
+1. The DB seed script fetches champion data from the API before the backend instance launches. If the requirement changes to accommodate a larger dataset, fetching from the API can be disabled. The seed script can then populate only the years without actual data, which will reduce app launch time.
