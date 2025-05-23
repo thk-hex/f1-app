@@ -3,6 +3,12 @@ plugins {
     id 'kotlin-android'
     id 'com.google.devtools.ksp'
     id 'dagger.hilt.android.plugin'
+    id 'jacoco'
+}
+
+// JaCoCo configuration
+jacoco {
+    toolVersion = "0.8.11"
 }
 
 android {
@@ -22,6 +28,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -56,6 +66,74 @@ android {
         unitTests {
             includeAndroidResources = true
         }
+    }
+}
+
+// JaCoCo test report configuration
+afterEvaluate {
+    tasks.register('jacocoTestReport', JacocoReport) {
+        dependsOn 'testDebugUnitTest'
+        
+        group = 'Reporting'
+        description = 'Generate JaCoCo coverage reports for the debug build.'
+        
+        reports {
+            xml.required = true
+            html.required = true
+            csv.required = false
+        }
+        
+        def fileFilter = [
+            // Android
+            '**/R.class',
+            '**/R$*.class',
+            '**/BuildConfig.*',
+            '**/Manifest*.*',
+            '**/*Test*.*',
+            'android/**/*.*',
+            
+            // Kotlin
+            '**/*$WhenMappings.*',
+            '**/*$serializer.*',
+            '**/*$$serializer.*',
+            
+            // Hilt/Dagger
+            '**/*_Factory.*',
+            '**/*_MembersInjector.*',
+            '**/Dagger*Component.*',
+            '**/Dagger*Component$Builder.*',
+            '**/*Module_*Factory.*',
+            '**/*_Impl.*',
+            '**/*Hilt*.*',
+            '**/*_HiltModules*.*',
+            '**/*_ComponentTreeDeps*.*',
+            
+            // Compose
+            '**/*ComposableSingletons*.*',
+            '**/*_Kt.*',
+            
+            // Generated files
+            '**/databinding/**/*.*',
+            '**/android/databinding/*Binding.*'
+        ]
+        
+        // Only use debug build directories to avoid release build dependencies
+        def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter)
+        def kotlinDebugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug", excludes: fileFilter)
+        
+        classDirectories.setFrom(files([debugTree, kotlinDebugTree]))
+        
+        def sourceDirs = [
+            "${project.projectDir}/src/main/java",
+            "${project.projectDir}/src/main/kotlin"
+        ]
+        
+        sourceDirectories.setFrom(files(sourceDirs))
+        
+        // Only look for execution data from debug unit tests
+        executionData.setFrom(fileTree(dir: "$buildDir", includes: [
+            'jacoco/testDebugUnitTest.exec'
+        ]))
     }
 }
 

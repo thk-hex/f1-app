@@ -80,8 +80,24 @@ describe('ChampionsService', () => {
   describe('getChampions', () => {
     it('should return cached champions if they exist in the database', async () => {
       const mockCachedChampions = [
-        { id: 1, season: '2005', givenName: 'Fernando', familyName: 'Alonso', createdAt: new Date(), updatedAt: new Date() },
-        { id: 2, season: '2006', givenName: 'Michael', familyName: 'Schumacher', createdAt: new Date(), updatedAt: new Date() },
+        { 
+          id: 1, 
+          season: '2005', 
+          givenName: 'Fernando', 
+          familyName: 'Alonso', 
+          driverId: 'alonso',
+          createdAt: new Date(), 
+          updatedAt: new Date() 
+        },
+        { 
+          id: 2, 
+          season: '2006', 
+          givenName: 'Michael', 
+          familyName: 'Schumacher', 
+          driverId: 'schumacher',
+          createdAt: new Date(), 
+          updatedAt: new Date() 
+        },
       ];
       
       (prismaService.champion.findMany as jest.Mock).mockResolvedValue(mockCachedChampions);
@@ -91,8 +107,30 @@ describe('ChampionsService', () => {
       expect(prismaService.champion.findMany).toHaveBeenCalled();
       expect(httpService.get).not.toHaveBeenCalled(); // API should not be called when cache exists
       expect(result).toEqual([
-        { season: '2005', givenName: 'Fernando', familyName: 'Alonso' },
-        { season: '2006', givenName: 'Michael', familyName: 'Schumacher' },
+        { season: '2005', givenName: 'Fernando', familyName: 'Alonso', driverId: 'alonso' },
+        { season: '2006', givenName: 'Michael', familyName: 'Schumacher', driverId: 'schumacher' },
+      ]);
+    });
+
+    it('should handle cached champions with missing driverId', async () => {
+      const mockCachedChampions = [
+        { 
+          id: 1, 
+          season: '2005', 
+          givenName: 'Fernando', 
+          familyName: 'Alonso', 
+          driverId: null, // Simulate missing driverId
+          createdAt: new Date(), 
+          updatedAt: new Date() 
+        },
+      ];
+      
+      (prismaService.champion.findMany as jest.Mock).mockResolvedValue(mockCachedChampions);
+      
+      const result = await service.getChampions();
+      
+      expect(result).toEqual([
+        { season: '2005', givenName: 'Fernando', familyName: 'Alonso', driverId: '' },
       ]);
     });
 
@@ -113,11 +151,13 @@ describe('ChampionsService', () => {
       mockDto2005.season = '2005';
       mockDto2005.givenName = 'Fernando';
       mockDto2005.familyName = 'Alonso';
+      mockDto2005.driverId = 'alonso';
       
       const mockDto2006 = new SeasonDto();
       mockDto2006.season = '2006';
       mockDto2006.givenName = 'Michael';
       mockDto2006.familyName = 'Schumacher';
+      mockDto2006.driverId = 'schumacher';
 
       // Create a spy on the makeRateLimitedRequest method before replacing its implementation
       const makeRateLimitedRequestSpy = jest.spyOn(
@@ -148,17 +188,17 @@ describe('ChampionsService', () => {
       expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(`${baseUrl}/2005/driverstandings/1.json`);
       expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(`${baseUrl}/2006/driverstandings/1.json`);
       
-      // Verify that data was stored in the database
+      // Verify that data was stored in the database with driverId
       expect(prismaService.champion.upsert).toHaveBeenCalledWith({
         where: { season: '2005' },
-        update: { givenName: 'Fernando', familyName: 'Alonso' },
-        create: { season: '2005', givenName: 'Fernando', familyName: 'Alonso' },
+        update: { givenName: 'Fernando', familyName: 'Alonso', driverId: 'alonso' },
+        create: { season: '2005', givenName: 'Fernando', familyName: 'Alonso', driverId: 'alonso' },
       });
       
       expect(prismaService.champion.upsert).toHaveBeenCalledWith({
         where: { season: '2006' },
-        update: { givenName: 'Michael', familyName: 'Schumacher' },
-        create: { season: '2006', givenName: 'Michael', familyName: 'Schumacher' },
+        update: { givenName: 'Michael', familyName: 'Schumacher', driverId: 'schumacher' },
+        create: { season: '2006', givenName: 'Michael', familyName: 'Schumacher', driverId: 'schumacher' },
       });
       
       // Verify the result
@@ -194,6 +234,7 @@ describe('ChampionsService', () => {
       mockDto2006.season = '2006';
       mockDto2006.givenName = 'Michael';
       mockDto2006.familyName = 'Schumacher';
+      mockDto2006.driverId = 'schumacher';
       
       // Mock the private method with proper error/success behavior
       const makeRateLimitedRequestSpy = jest.spyOn(
@@ -221,15 +262,46 @@ describe('ChampionsService', () => {
         'API error for 2005',
       );
       
-      // Verify the database operation was called for the successful request
+      // Verify the database operation was called for the successful request with driverId
       expect(prismaService.champion.upsert).toHaveBeenCalledWith({
         where: { season: '2006' },
-        update: { givenName: 'Michael', familyName: 'Schumacher' },
-        create: { season: '2006', givenName: 'Michael', familyName: 'Schumacher' },
+        update: { givenName: 'Michael', familyName: 'Schumacher', driverId: 'schumacher' },
+        create: { season: '2006', givenName: 'Michael', familyName: 'Schumacher', driverId: 'schumacher' },
       });
       
       // We should have at least the 2006 result in our array
       expect(result).toContainEqual(mockDto2006);
+    });
+
+    it('should handle empty season data from mapper', async () => {
+      // Mock empty database
+      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      
+      const baseUrl = 'https://api.jolpi.ca/ergast/f1';
+      (configService.get as jest.Mock).mockImplementation((key) => {
+        if (key === 'BASE_URL') return baseUrl;
+        if (key === 'GP_START_YEAR') return 2005;
+        return undefined;
+      });
+      
+      const mockData2005 = { MRData: {} }; // Empty data
+      const mockEmptyDto = new SeasonDto();
+      // Leave all fields empty/undefined
+      
+      // Create a spy on the makeRateLimitedRequest method
+      const makeRateLimitedRequestSpy = jest.spyOn(
+        service as any,
+        'makeRateLimitedRequest',
+      );
+      
+      makeRateLimitedRequestSpy.mockResolvedValue(mockData2005);
+      (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(mockEmptyDto);
+      
+      const result = await service.getChampions();
+      
+      // Should not call upsert for empty/invalid data
+      expect(prismaService.champion.upsert).not.toHaveBeenCalled();
+      expect(result).toEqual([]);
     });
   });
   
@@ -287,6 +359,42 @@ describe('ChampionsService', () => {
       
       // Restore the original spy
       setTimeoutSpy.mockRestore();
+    });
+
+    it('should apply default rate limiting even without headers', async () => {
+      const mockData = { test: 'data' };
+      const mockResponse = { 
+        data: mockData, 
+        headers: {} // No rate limiting headers
+      };
+      
+      (httpService.get as jest.Mock).mockReturnValue(of(mockResponse));
+      
+      const setTimeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation((fn: any) => {
+        fn();
+        return null as any;
+      });
+      
+      const result = await (service as any).makeRateLimitedRequest('test-url');
+      
+      // Should still apply default 250ms rate limiting
+      expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 250);
+      expect(result).toEqual(mockData);
+      
+      setTimeoutSpy.mockRestore();
+    });
+
+    it('should handle non-429 errors by rethrowing them', async () => {
+      const mockError = { 
+        response: { 
+          status: 500, 
+          statusText: 'Internal Server Error'
+        }
+      };
+      
+      (httpService.get as jest.Mock).mockReturnValue(throwError(() => mockError));
+      
+      await expect((service as any).makeRateLimitedRequest('test-url')).rejects.toEqual(mockError);
     });
   });
 });
