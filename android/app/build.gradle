@@ -3,7 +3,6 @@ plugins {
     id 'kotlin-android'
     id 'com.google.devtools.ksp'
     id 'dagger.hilt.android.plugin'
-    id 'jacoco'
 }
 
 android {
@@ -23,9 +22,6 @@ android {
     }
 
     buildTypes {
-        debug {
-            enableUnitTestCoverage true
-        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
