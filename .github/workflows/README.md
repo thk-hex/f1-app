@@ -5,14 +5,25 @@ This repository contains two comprehensive CI/CD pipelines for the F1 Champions 
 ## 🏗️ Pipeline Overview
 
 ### Android Pipeline (`android.yml`)
-- **Triggers**: Changes to `android/**` directory and the workflow file itself
+- **Push Triggers**: Changes to `android/**` directory and the workflow file itself
+- **PR Triggers**: **ANY PR** to main/develop (ensures Android compatibility)
 - **Jobs**: `test`, `build`, `instrumented-test`
 - **Platform**: Ubuntu Latest with Android SDK
 
 ### Backend Pipeline (`backend.yml`)
-- **Triggers**: Changes to `backend/**` directory and the workflow file itself  
+- **Push Triggers**: Changes to `backend/**` directory and the workflow file itself  
+- **PR Triggers**: **ANY PR** to main/develop (ensures backend compatibility)
 - **Jobs**: `test`, `build`, `docker-build`, `security-scan`
 - **Platform**: Ubuntu Latest with Node.js 20
+
+## 🛡️ Branch Protection
+
+Both pipelines are configured to:
+- **Run on every PR** regardless of changed files
+- **Block PR merging** until all jobs pass successfully
+- **Require code review** before merging
+
+See [Branch Protection Setup Guide](.github/BRANCH_PROTECTION_SETUP.md) for detailed configuration instructions.
 
 ## 📱 Android Pipeline Details
 
@@ -134,10 +145,24 @@ This repository contains two comprehensive CI/CD pipelines for the F1 Champions 
 ## 🚀 Usage
 
 ### Triggering Pipelines
-Pipelines automatically trigger on:
-- Push to `main` or `develop` branches
-- Pull requests to `main` or `develop` branches
-- Only when files in respective project directories change
+
+#### Pull Requests
+- **Both pipelines run on ANY PR** to `main` or `develop` branches
+- Ensures full compatibility regardless of which files changed
+- All jobs must pass before PR can be merged
+
+#### Push Events  
+- **Android pipeline**: Only runs when `android/**` files change
+- **Backend pipeline**: Only runs when `backend/**` files change
+- Optimizes CI resources for direct pushes
+
+### Workflow Summary
+1. **Create PR** → Both pipelines trigger automatically
+2. **All jobs must pass**:
+   - ✅ Android: Lint → Test → Build → Instrumented Tests
+   - ✅ Backend: Test → (Build + Docker + Security)
+3. **Code review required** (configurable)
+4. **Merge enabled** only after all checks pass
 
 ### Manual Workflow Dispatch
 You can manually trigger workflows from the GitHub Actions tab if needed.
