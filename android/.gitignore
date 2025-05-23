@@ -2,8 +2,6 @@
 .gradle/
 build/
 */build/
-gradlew
-gradlew.bat
 gradle/
 gradle.properties
 
