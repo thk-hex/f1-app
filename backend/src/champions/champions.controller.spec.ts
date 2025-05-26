@@ -45,7 +45,7 @@ describe('ChampionsController', () => {
       mockSeason2006.driverId = 'schumacher';
 
       const mockResult = [mockSeason2005, mockSeason2006];
-      
+
       mockChampionsService.getChampions.mockResolvedValue(mockResult);
 
       const result = await controller.getChampions();

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
 import { RaceWinnersMapper } from './race-winners.mapper';
 import { RaceDto } from './dto/race.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { F1ValidationUtil, HttpRateLimiterUtil } from '../shared/utils';
 
 @Injectable()
 export class RaceWinnersService {
@@ -23,9 +23,11 @@ export class RaceWinnersService {
 
     // If we have cached data, sort by round number and return it
     if (cachedRaces.length > 0) {
-      const sortedRaces = cachedRaces.sort((a, b) => parseInt(a.round) - parseInt(b.round));
-      
-      return sortedRaces.map(race => ({
+      const sortedRaces = cachedRaces.sort(
+        (a, b) => parseInt(a.round) - parseInt(b.round),
+      );
+
+      return sortedRaces.map((race) => ({
         round: race.round,
         gpName: race.gpName,
         winnerId: race.winnerId,
@@ -36,27 +38,28 @@ export class RaceWinnersService {
 
     // If no cached data, fetch from API and store in database
     const baseUrl = this.configService.get<string>('BASE_URL');
-    if (!baseUrl) {
-      throw new Error('BASE_URL not configured in .env file');
-    }
+    F1ValidationUtil.validateBaseUrl(baseUrl);
 
     const apiUrl = `${baseUrl}/${year}/results/1.json`;
-    
+
     try {
-      const response = await this.makeRateLimitedRequest(apiUrl);
+      const response = await HttpRateLimiterUtil.makeRateLimitedRequest(
+        this.httpService,
+        apiUrl,
+      );
       const raceDtos = this.raceWinnersMapper.mapToRaceDtos(response);
-      
+
       // Sort by round number for consistent ordering
       raceDtos.sort((a, b) => parseInt(a.round) - parseInt(b.round));
-      
+
       // Store in database
       for (const raceDto of raceDtos) {
         await this.prisma.raceWinner.upsert({
-          where: { 
+          where: {
             season_round: {
               season: year.toString(),
               round: raceDto.round,
-            }
+            },
           },
           update: {
             gpName: raceDto.gpName,
@@ -78,45 +81,6 @@ export class RaceWinnersService {
       return raceDtos;
     } catch (error) {
       console.error(`Error fetching race winners for ${year}:`, error.message);
-      throw error;
-    }
-  }
-
-  private async makeRateLimitedRequest(url: string): Promise<any> {
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(url)
-      );
-      
-      const data = response.data;
-      const headers = response.headers;
-
-      // Check if there's a rate limit header indicating when we can make the next request
-      const retryAfter = headers['retry-after'] || headers['x-ratelimit-reset'];
-      
-      if (retryAfter) {
-        // If header exists, wait for the specified time
-        const waitTimeMs = parseInt(retryAfter, 10) * 1000;
-        await new Promise(resolve => setTimeout(resolve, waitTimeMs));
-      } else {
-        // Default rate limiting: 4 requests per second = 250ms between requests
-        await new Promise(resolve => setTimeout(resolve, 250));
-      }
-
-      return data;
-    } catch (error) {
-      // If we hit a rate limit, wait and try again
-      if (error.response && error.response.status === 429) {
-        const retryAfter = error.response.headers['retry-after'] || error.response.headers['x-ratelimit-reset'] || 1;
-        const waitTimeMs = parseInt(retryAfter, 10) * 1000;
-        
-        console.log(`Rate limit hit, waiting for ${waitTimeMs}ms before retrying...`);
-        await new Promise(resolve => setTimeout(resolve, waitTimeMs));
-        
-        // Retry the request after waiting
-        return this.makeRateLimitedRequest(url);
-      }
-      
       throw error;
     }
   }
