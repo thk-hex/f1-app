@@ -143,10 +143,14 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'
     
+    // Compose BOM
+    implementation platform("androidx.compose:compose-bom:$compose_bom_version")
+    
     // Compose
-    implementation "androidx.compose.ui:ui:$compose_version"
-    implementation "androidx.compose.material:material:$compose_version"
-    implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
+    implementation "androidx.compose.ui:ui"
+    implementation "androidx.compose.material3:material3"
+    implementation "androidx.compose.material3:material3-window-size-class"
+    implementation "androidx.compose.ui:ui-tooling-preview"
     implementation 'androidx.activity:activity-compose:1.10.1'
     implementation "androidx.navigation:navigation-compose:$nav_version"
     implementation "androidx.hilt:hilt-navigation-compose:1.2.0"
@@ -185,7 +189,8 @@ dependencies {
     // Android Tests
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
-    androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
+    androidTestImplementation platform("androidx.compose:compose-bom:$compose_bom_version")
+    androidTestImplementation "androidx.compose.ui:ui-test-junit4"
     androidTestImplementation "com.google.dagger:hilt-android-testing:$hilt_version"
     androidTestImplementation "androidx.arch.core:core-testing:2.2.0"
     androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
@@ -196,6 +201,6 @@ dependencies {
     kspAndroidTest "com.google.dagger:hilt-android-compiler:$hilt_version"
     
     // Debug implementations
-    debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
-    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
+    debugImplementation "androidx.compose.ui:ui-tooling"
+    debugImplementation "androidx.compose.ui:ui-test-manifest"
 } 
