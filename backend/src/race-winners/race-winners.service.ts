@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { RaceWinnersMapper } from './race-winners.mapper';
 import { RaceDto } from './dto/race.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService, CacheTTL } from '../cache/cache.service';
 import { F1ValidationUtil, HttpRateLimiterUtil } from '../shared/utils';
 
 @Injectable()
@@ -13,30 +14,49 @@ export class RaceWinnersService {
     private readonly configService: ConfigService,
     private readonly raceWinnersMapper: RaceWinnersMapper,
     private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async getRaceWinners(year: number): Promise<RaceDto[]> {
-    // First check if we already have data in the database for this year
+    const cacheKey = this.cacheService.getRaceWinnersKey(year);
+
+    // First check Redis cache
+    const cachedRaceWinners = await this.cacheService.get<RaceDto[]>(cacheKey);
+    if (cachedRaceWinners) {
+      console.log(`Returning race winners for ${year} from Redis cache`);
+      return cachedRaceWinners;
+    }
+
+    // Then check if we already have data in the database for this year
     const cachedRaces = await this.prisma.raceWinner.findMany({
       where: { season: year.toString() },
     });
 
     // If we have cached data, sort by round number and return it
     if (cachedRaces.length > 0) {
+      console.log(
+        `Loading race winners for ${year} from database and caching in Redis`,
+      );
       const sortedRaces = cachedRaces.sort(
         (a, b) => parseInt(a.round) - parseInt(b.round),
       );
 
-      return sortedRaces.map((race) => ({
+      const raceResults = sortedRaces.map((race) => ({
         round: race.round,
         gpName: race.gpName,
         winnerId: race.winnerId,
         winnerGivenName: race.winnerGivenName,
         winnerFamilyName: race.winnerFamilyName,
       }));
+
+      // Cache the database result in Redis for faster future access
+      await this.cacheService.set(cacheKey, raceResults, CacheTTL.RACE_WINNERS);
+
+      return raceResults;
     }
 
     // If no cached data, fetch from API and store in database
+    console.log(`Fetching race winners for ${year} from external API`);
     const baseUrl = this.configService.get<string>('BASE_URL');
     F1ValidationUtil.validateBaseUrl(baseUrl);
 
@@ -76,6 +96,11 @@ export class RaceWinnersService {
             winnerFamilyName: raceDto.winnerFamilyName,
           },
         });
+      }
+
+      // Cache the API result in Redis
+      if (raceDtos.length > 0) {
+        await this.cacheService.set(cacheKey, raceDtos, CacheTTL.RACE_WINNERS);
       }
 
       return raceDtos;

@@ -5,14 +5,16 @@ import { ChampionsModule } from './champions/champions.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { RaceWinnersModule } from './race-winners/race-winners.module';
+import { RedisCacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
-    ChampionsModule,
     ConfigModule.forRoot({
       envFilePath: '.env',
       isGlobal: true,
     }),
+    RedisCacheModule,
+    ChampionsModule,
     PrismaModule,
     RaceWinnersModule,
   ],

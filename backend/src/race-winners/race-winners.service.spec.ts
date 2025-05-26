@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { RaceWinnersMapper } from './race-winners.mapper';
 import { PrismaService } from '../prisma/prisma.service';
 import { TestUtils } from '../shared/utils';
+import { CacheService } from '../cache/cache.service';
 
 describe('RaceWinnersService', () => {
   let service: RaceWinnersService;
@@ -13,6 +14,7 @@ describe('RaceWinnersService', () => {
   let configService: ConfigService;
   let mapper: RaceWinnersMapper;
   let prismaService: PrismaService;
+  let cacheService: CacheService;
   let consoleErrorSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
 
@@ -47,6 +49,15 @@ describe('RaceWinnersService', () => {
             },
           },
         },
+        {
+          provide: CacheService,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+            getRaceWinnersKey: jest.fn((year) => `race_winners:${year}`),
+          },
+        },
       ],
     }).compile();
 
@@ -55,15 +66,19 @@ describe('RaceWinnersService', () => {
     configService = module.get<ConfigService>(ConfigService);
     mapper = module.get<RaceWinnersMapper>(RaceWinnersMapper);
     prismaService = module.get<PrismaService>(PrismaService);
+    cacheService = module.get<CacheService>(CacheService);
 
     // Mock console methods to prevent them from showing in test output
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Reset cache service mocks
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
-    consoleErrorSpy.mockRestore();
-    consoleLogSpy.mockRestore();
+    consoleErrorSpy?.mockRestore();
+    consoleLogSpy?.mockRestore();
   });
 
   it('should be defined', () => {
@@ -71,6 +86,36 @@ describe('RaceWinnersService', () => {
   });
 
   describe('getRaceWinners', () => {
+    it('should return race winners from Redis cache if available', async () => {
+      const year = 2005;
+      const mockCachedRaceWinners = [
+        {
+          round: '1',
+          gpName: 'Australian Grand Prix',
+          winnerId: 'fisichella',
+          winnerGivenName: 'Giancarlo',
+          winnerFamilyName: 'Fisichella',
+        },
+        {
+          round: '2',
+          gpName: 'Malaysian Grand Prix',
+          winnerId: 'alonso',
+          winnerGivenName: 'Fernando',
+          winnerFamilyName: 'Alonso',
+        },
+      ];
+
+      // Mock Redis cache hit
+      (cacheService.get as jest.Mock).mockResolvedValue(mockCachedRaceWinners);
+
+      const result = await service.getRaceWinners(year);
+
+      expect(cacheService.get).toHaveBeenCalledWith('race_winners:2005');
+      expect(prismaService.raceWinner.findMany).not.toHaveBeenCalled();
+      expect(httpService.get).not.toHaveBeenCalled();
+      expect(result).toEqual(mockCachedRaceWinners);
+    });
+
     it('should return cached race winners if they exist in the database', async () => {
       const year = 2005;
       const mockCachedRaces = [
@@ -98,15 +143,23 @@ describe('RaceWinnersService', () => {
         },
       ];
 
+      // Mock Redis cache miss but database hit
+      (cacheService.get as jest.Mock).mockResolvedValue(null);
       (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue(
         mockCachedRaces,
       );
 
       const result = await service.getRaceWinners(year);
 
+      expect(cacheService.get).toHaveBeenCalledWith('race_winners:2005');
       expect(prismaService.raceWinner.findMany).toHaveBeenCalledWith({
         where: { season: year.toString() },
       });
+      expect(cacheService.set).toHaveBeenCalledWith(
+        'race_winners:2005',
+        expect.any(Array),
+        1800000,
+      );
       expect(httpService.get).not.toHaveBeenCalled(); // API should not be called when cache exists
       expect(result).toEqual([
         {

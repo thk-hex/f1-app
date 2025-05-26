@@ -8,6 +8,7 @@ import { SeasonDto } from './dto/season.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException } from '@nestjs/common';
 import { TestUtils } from '../shared/utils';
+import { CacheService } from '../cache/cache.service';
 
 describe('ChampionsService', () => {
   let service: ChampionsService;
@@ -15,6 +16,7 @@ describe('ChampionsService', () => {
   let configService: ConfigService;
   let mapper: ChampionsMapper;
   let repository: ChampionsRepository;
+  let cacheService: CacheService;
   let consoleErrorSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
 
@@ -60,6 +62,15 @@ describe('ChampionsService', () => {
             },
           },
         },
+        {
+          provide: CacheService,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+            getChampionsKey: jest.fn().mockReturnValue('champions'),
+          },
+        },
       ],
     }).compile();
 
@@ -68,6 +79,7 @@ describe('ChampionsService', () => {
     configService = module.get<ConfigService>(ConfigService);
     mapper = module.get<ChampionsMapper>(ChampionsMapper);
     repository = module.get<ChampionsRepository>(ChampionsRepository);
+    cacheService = module.get<CacheService>(CacheService);
 
     // Mock console methods to prevent them from showing in test output
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -75,11 +87,14 @@ describe('ChampionsService', () => {
 
     // Mock Date.getFullYear to return a consistent value
     jest.spyOn(Date.prototype, 'getFullYear').mockReturnValue(2006);
+
+    // Reset cache service mocks
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
-    consoleErrorSpy.mockRestore();
-    consoleLogSpy.mockRestore();
+    consoleErrorSpy?.mockRestore();
+    consoleLogSpy?.mockRestore();
     jest.restoreAllMocks();
   });
 
@@ -88,6 +103,34 @@ describe('ChampionsService', () => {
   });
 
   describe('getChampions', () => {
+    it('should return champions from Redis cache if available', async () => {
+      const mockCachedChampions = [
+        {
+          season: '2005',
+          givenName: 'Fernando',
+          familyName: 'Alonso',
+          driverId: 'alonso',
+        },
+        {
+          season: '2006',
+          givenName: 'Michael',
+          familyName: 'Schumacher',
+          driverId: 'schumacher',
+        },
+      ];
+
+      // Mock Redis cache hit
+      (cacheService.get as jest.Mock).mockResolvedValue(mockCachedChampions);
+
+      const result = await service.getChampions();
+
+      expect(cacheService.get).toHaveBeenCalledWith('champions');
+      expect(repository.hasChampionsData).not.toHaveBeenCalled();
+      expect(repository.findAllChampions).not.toHaveBeenCalled();
+      expect(httpService.get).not.toHaveBeenCalled();
+      expect(result).toEqual(mockCachedChampions);
+    });
+
     it('should return cached champions if they exist in the database', async () => {
       const mockCachedChampions = [
         {
@@ -104,6 +147,8 @@ describe('ChampionsService', () => {
         },
       ];
 
+      // Mock Redis cache miss but database hit
+      (cacheService.get as jest.Mock).mockResolvedValue(null);
       (repository.hasChampionsData as jest.Mock).mockResolvedValue(true);
       (repository.findAllChampions as jest.Mock).mockResolvedValue(
         mockCachedChampions,
@@ -111,8 +156,14 @@ describe('ChampionsService', () => {
 
       const result = await service.getChampions();
 
+      expect(cacheService.get).toHaveBeenCalledWith('champions');
       expect(repository.hasChampionsData).toHaveBeenCalled();
       expect(repository.findAllChampions).toHaveBeenCalled();
+      expect(cacheService.set).toHaveBeenCalledWith(
+        'champions',
+        mockCachedChampions,
+        3600000,
+      );
       expect(httpService.get).not.toHaveBeenCalled(); // API should not be called when cache exists
       expect(result).toEqual([
         {
