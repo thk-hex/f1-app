@@ -10,6 +10,6 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [HttpModule, PrismaModule],
   providers: [ChampionsService, ChampionsMapper, ChampionsRepository],
   controllers: [ChampionsController],
-  exports: [ChampionsMapper, ChampionsRepository], // Export for use in seed script
+  exports: [ChampionsMapper, ChampionsRepository],
 })
 export class ChampionsModule {}
