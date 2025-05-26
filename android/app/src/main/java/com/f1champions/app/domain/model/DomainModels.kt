@@ -7,6 +7,7 @@ data class Season(
 )
 
 data class Race(
+    val round: String,
     val grandPrixName: String,
     val winnerName: String,
     val winnerId: String

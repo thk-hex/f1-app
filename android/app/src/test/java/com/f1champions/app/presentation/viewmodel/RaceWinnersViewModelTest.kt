@@ -49,8 +49,8 @@ class RaceWinnersViewModelTest {
     fun `fetchRaceWinners should update state to loading then success when usecase returns success`() = runTest {
         // Given
         val races = listOf(
-            Race("Monaco GP", "Max Verstappen", "verstappen"),
-            Race("British GP", "Lewis Hamilton", "hamilton")
+            Race("6", "Monaco GP", "Max Verstappen", "verstappen"),
+            Race("10", "British GP", "Lewis Hamilton", "hamilton")
         )
         coEvery { getRaceWinnersUseCase(testSeason) } returns flowOf(Result.success(races))
         
@@ -68,6 +68,7 @@ class RaceWinnersViewModelTest {
             assertThat(success.raceWinners).isInstanceOf(UiState.Success::class.java)
             val data = (success.raceWinners as UiState.Success<List<Race>>).data
             assertThat(data).hasSize(2)
+            assertThat(data[0].round).isEqualTo("6")
             assertThat(data[0].grandPrixName).isEqualTo("Monaco GP")
             assertThat(data[0].winnerName).isEqualTo("Max Verstappen")
         }

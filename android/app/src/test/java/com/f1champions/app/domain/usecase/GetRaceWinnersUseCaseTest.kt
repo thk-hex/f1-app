@@ -28,8 +28,8 @@ class GetRaceWinnersUseCaseTest {
         // Given
         val year = "2023"
         val races = listOf(
-            Race("Monaco GP", "Max Verstappen", "verstappen"),
-            Race("British GP", "Lewis Hamilton", "hamilton")
+            Race("6", "Monaco GP", "Max Verstappen", "verstappen"),
+            Race("10", "British GP", "Lewis Hamilton", "hamilton")
         )
         every { repository.getRaceWinners(year) } returns flowOf(Result.success(races))
         
@@ -40,6 +40,7 @@ class GetRaceWinnersUseCaseTest {
             
             val raceData = result.getOrNull()!!
             assertThat(raceData).hasSize(2)
+            assertThat(raceData[0].round).isEqualTo("6")
             assertThat(raceData[0].grandPrixName).isEqualTo("Monaco GP")
             assertThat(raceData[0].winnerName).isEqualTo("Max Verstappen")
             assertThat(raceData[0].winnerId).isEqualTo("verstappen")

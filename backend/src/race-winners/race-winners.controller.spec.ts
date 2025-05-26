@@ -34,12 +34,14 @@ describe('RaceWinnersController', () => {
     it('should call raceWinnersService.getRaceWinners with the provided year and return its result', async () => {
       const year = 2005;
       const mockRace1 = new RaceDto();
+      mockRace1.round = '1';
       mockRace1.gpName = 'Australian Grand Prix';
       mockRace1.winnerId = 'fisichella';
       mockRace1.winnerGivenName = 'Giancarlo';
       mockRace1.winnerFamilyName = 'Fisichella';
 
       const mockRace2 = new RaceDto();
+      mockRace2.round = '2';
       mockRace2.gpName = 'Malaysian Grand Prix';
       mockRace2.winnerId = 'alonso';
       mockRace2.winnerGivenName = 'Fernando';

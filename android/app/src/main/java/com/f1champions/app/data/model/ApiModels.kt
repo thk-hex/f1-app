@@ -13,6 +13,7 @@ data class SeasonDto(
 
 @JsonClass(generateAdapter = true)
 data class RaceDto(
+    @Json(name = "round") val round: String,
     @Json(name = "gpName") val gpName: String,
     @Json(name = "winnerId") val winnerId: String,
     @Json(name = "winnerGivenName") val winnerGivenName: String,

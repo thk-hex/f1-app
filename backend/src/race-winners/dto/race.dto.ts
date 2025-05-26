@@ -3,6 +3,11 @@ import { Expose } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RaceDto {
+  @ApiProperty({ description: 'Round number in the season', example: '1' })
+  @IsString()
+  @Expose()
+  round: string;
+
   @ApiProperty({ description: 'Grand Prix name', example: 'Monaco Grand Prix' })
   @IsString()
   @Expose()

@@ -103,21 +103,91 @@ describe('RaceWinnersService', () => {
       
       expect(prismaService.raceWinner.findMany).toHaveBeenCalledWith({
         where: { season: year.toString() },
-        orderBy: { round: 'asc' },
       });
       expect(httpService.get).not.toHaveBeenCalled(); // API should not be called when cache exists
       expect(result).toEqual([
         { 
+          round: '1',
           gpName: 'Australian Grand Prix', 
           winnerId: 'fisichella',
           winnerGivenName: 'Giancarlo', 
           winnerFamilyName: 'Fisichella'
         },
         { 
+          round: '2',
           gpName: 'Malaysian Grand Prix', 
           winnerId: 'alonso',
           winnerGivenName: 'Fernando', 
           winnerFamilyName: 'Alonso'
+        },
+      ]);
+    });
+
+    it('should return cached race winners sorted by round number (numeric order)', async () => {
+      const year = 2005;
+      // Mock data with rounds that would be incorrectly ordered if using string sorting
+      const mockCachedRaces = [
+        { 
+          id: 3, 
+          season: '2005', 
+          round: '10', 
+          gpName: 'Round 10 GP', 
+          winnerId: 'driver3',
+          winnerGivenName: 'Driver', 
+          winnerFamilyName: 'Three', 
+          createdAt: new Date(), 
+          updatedAt: new Date() 
+        },
+        { 
+          id: 1, 
+          season: '2005', 
+          round: '2', 
+          gpName: 'Round 2 GP', 
+          winnerId: 'driver1',
+          winnerGivenName: 'Driver', 
+          winnerFamilyName: 'One', 
+          createdAt: new Date(), 
+          updatedAt: new Date() 
+        },
+        { 
+          id: 2, 
+          season: '2005', 
+          round: '3', 
+          gpName: 'Round 3 GP', 
+          winnerId: 'driver2',
+          winnerGivenName: 'Driver', 
+          winnerFamilyName: 'Two', 
+          createdAt: new Date(), 
+          updatedAt: new Date() 
+        },
+      ];
+      
+      (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue(mockCachedRaces);
+      
+      const result = await service.getRaceWinners(year);
+      
+      // Verify the results are ordered by round number (2, 3, 10) not string order (10, 2, 3)
+      expect(result).toEqual([
+        { 
+          round: '2',
+          gpName: 'Round 2 GP', 
+          winnerId: 'driver1',
+          winnerGivenName: 'Driver', 
+          winnerFamilyName: 'One'
+        },
+        { 
+          round: '3',
+          gpName: 'Round 3 GP', 
+          winnerId: 'driver2',
+          winnerGivenName: 'Driver', 
+          winnerFamilyName: 'Two'
+        },
+        { 
+          round: '10',
+          gpName: 'Round 10 GP', 
+          winnerId: 'driver3',
+          winnerGivenName: 'Driver', 
+          winnerFamilyName: 'Three'
         },
       ]);
     });
@@ -139,6 +209,7 @@ describe('RaceWinnersService', () => {
           RaceTable: { 
             Races: [
               {
+                round: '1',
                 raceName: 'Australian Grand Prix',
                 Results: [
                   {
@@ -151,6 +222,7 @@ describe('RaceWinnersService', () => {
                 ]
               },
               {
+                round: '2',
                 raceName: 'Malaysian Grand Prix',
                 Results: [
                   {
@@ -169,12 +241,14 @@ describe('RaceWinnersService', () => {
       
       const mockDtos = [
         { 
+          round: '1',
           gpName: 'Australian Grand Prix', 
           winnerId: 'fisichella',
           winnerGivenName: 'Giancarlo', 
           winnerFamilyName: 'Fisichella'
         },
         { 
+          round: '2',
           gpName: 'Malaysian Grand Prix', 
           winnerId: 'alonso',
           winnerGivenName: 'Fernando', 

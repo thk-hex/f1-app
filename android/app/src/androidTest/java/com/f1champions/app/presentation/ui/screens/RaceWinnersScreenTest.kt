@@ -26,8 +26,8 @@ class RaceWinnersScreenTest {
     fun raceWinnersList_displaysCorrectly_whenStateIsSuccess() {
         // Given
         val races = listOf(
-            Race("Monaco GP", "Max Verstappen", "verstappen"),
-            Race("British GP", "Lewis Hamilton", "hamilton")
+            Race("6", "Monaco GP", "Max Verstappen", "verstappen"),
+            Race("10", "British GP", "Lewis Hamilton", "hamilton")
         )
         val viewModel = mockk<RaceWinnersViewModel>()
         val uiState = MutableStateFlow(
@@ -51,8 +51,10 @@ class RaceWinnersScreenTest {
         
         // Then
         composeTestRule.onNodeWithText("Race Winners (2023)").assertIsDisplayed()
+        composeTestRule.onNodeWithText("6").assertIsDisplayed() // Round number
         composeTestRule.onNodeWithText("Monaco GP").assertIsDisplayed()
         composeTestRule.onNodeWithText("Max Verstappen").assertIsDisplayed()
+        composeTestRule.onNodeWithText("10").assertIsDisplayed() // Round number
         composeTestRule.onNodeWithText("British GP").assertIsDisplayed()
         composeTestRule.onNodeWithText("Lewis Hamilton").assertIsDisplayed()
         
