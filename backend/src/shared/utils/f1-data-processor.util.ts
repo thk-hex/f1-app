@@ -40,7 +40,8 @@ export class F1DataProcessorUtil {
           results.push(result);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error : new Error(String(error));
+        const errorMessage =
+          error instanceof Error ? error : new Error(String(error));
         onError?.(year, errorMessage);
         // Continue with the next year even if one fails
       }
@@ -52,7 +53,11 @@ export class F1DataProcessorUtil {
   /**
    * Gets the year range for processing
    */
-  static getYearRange(startYear: number): { startYear: number; endYear: number; totalYears: number } {
+  static getYearRange(startYear: number): {
+    startYear: number;
+    endYear: number;
+    totalYears: number;
+  } {
     const endYear = new Date().getFullYear();
     return {
       startYear,
@@ -60,4 +65,4 @@ export class F1DataProcessorUtil {
       totalYears: endYear - startYear + 1,
     };
   }
-} 
+}

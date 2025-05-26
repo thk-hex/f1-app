@@ -4,7 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import { ChampionsMapper } from './champions.mapper';
 import { ChampionsRepository } from './champions.repository';
 import { SeasonDto } from './dto/season.dto';
-import { F1ValidationUtil, HttpRateLimiterUtil, F1DataProcessorUtil } from '../shared/utils';
+import {
+  F1ValidationUtil,
+  HttpRateLimiterUtil,
+  F1DataProcessorUtil,
+} from '../shared/utils';
 
 @Injectable()
 export class ChampionsService {
