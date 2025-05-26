@@ -23,7 +23,6 @@ export class RaceWinnersService {
 
     // If we have cached data, sort by round number and return it
     if (cachedRaces.length > 0) {
-      // Sort by round number (convert string to number for proper ordering)
       const sortedRaces = cachedRaces.sort((a, b) => parseInt(a.round) - parseInt(b.round));
       
       return sortedRaces.map(race => ({
