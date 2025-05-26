@@ -5,13 +5,13 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // Enable CORS
   app.enableCors();
-  
+
   // Add validation pipe
   app.useGlobalPipes(new ValidationPipe());
-  
+
   // Setup Swagger
   const config = new DocumentBuilder()
     .setTitle('F1 Champions API')
@@ -20,7 +20,7 @@ async function bootstrap() {
     .addTag('champions')
     .addTag('race-winners')
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 

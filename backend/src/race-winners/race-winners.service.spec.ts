@@ -2,9 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RaceWinnersService } from './race-winners.service';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import { of, throwError } from 'rxjs';
+
 import { RaceWinnersMapper } from './race-winners.mapper';
 import { PrismaService } from '../prisma/prisma.service';
+import { TestUtils } from '../shared/utils';
 
 describe('RaceWinnersService', () => {
   let service: RaceWinnersService;
@@ -73,52 +74,54 @@ describe('RaceWinnersService', () => {
     it('should return cached race winners if they exist in the database', async () => {
       const year = 2005;
       const mockCachedRaces = [
-        { 
-          id: 1, 
-          season: '2005', 
-          round: '1', 
-          gpName: 'Australian Grand Prix', 
+        {
+          id: 1,
+          season: '2005',
+          round: '1',
+          gpName: 'Australian Grand Prix',
           winnerId: 'fisichella',
-          winnerGivenName: 'Giancarlo', 
-          winnerFamilyName: 'Fisichella', 
-          createdAt: new Date(), 
-          updatedAt: new Date() 
+          winnerGivenName: 'Giancarlo',
+          winnerFamilyName: 'Fisichella',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
-        { 
-          id: 2, 
-          season: '2005', 
-          round: '2', 
-          gpName: 'Malaysian Grand Prix', 
+        {
+          id: 2,
+          season: '2005',
+          round: '2',
+          gpName: 'Malaysian Grand Prix',
           winnerId: 'alonso',
-          winnerGivenName: 'Fernando', 
-          winnerFamilyName: 'Alonso', 
-          createdAt: new Date(), 
-          updatedAt: new Date() 
+          winnerGivenName: 'Fernando',
+          winnerFamilyName: 'Alonso',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ];
-      
-      (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue(mockCachedRaces);
-      
+
+      (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue(
+        mockCachedRaces,
+      );
+
       const result = await service.getRaceWinners(year);
-      
+
       expect(prismaService.raceWinner.findMany).toHaveBeenCalledWith({
         where: { season: year.toString() },
       });
       expect(httpService.get).not.toHaveBeenCalled(); // API should not be called when cache exists
       expect(result).toEqual([
-        { 
+        {
           round: '1',
-          gpName: 'Australian Grand Prix', 
+          gpName: 'Australian Grand Prix',
           winnerId: 'fisichella',
-          winnerGivenName: 'Giancarlo', 
-          winnerFamilyName: 'Fisichella'
+          winnerGivenName: 'Giancarlo',
+          winnerFamilyName: 'Fisichella',
         },
-        { 
+        {
           round: '2',
-          gpName: 'Malaysian Grand Prix', 
+          gpName: 'Malaysian Grand Prix',
           winnerId: 'alonso',
-          winnerGivenName: 'Fernando', 
-          winnerFamilyName: 'Alonso'
+          winnerGivenName: 'Fernando',
+          winnerFamilyName: 'Alonso',
         },
       ]);
     });
@@ -127,86 +130,88 @@ describe('RaceWinnersService', () => {
       const year = 2005;
       // Mock data with rounds that would be incorrectly ordered if using string sorting
       const mockCachedRaces = [
-        { 
-          id: 3, 
-          season: '2005', 
-          round: '10', 
-          gpName: 'Round 10 GP', 
+        {
+          id: 3,
+          season: '2005',
+          round: '10',
+          gpName: 'Round 10 GP',
           winnerId: 'driver3',
-          winnerGivenName: 'Driver', 
-          winnerFamilyName: 'Three', 
-          createdAt: new Date(), 
-          updatedAt: new Date() 
+          winnerGivenName: 'Driver',
+          winnerFamilyName: 'Three',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
-        { 
-          id: 1, 
-          season: '2005', 
-          round: '2', 
-          gpName: 'Round 2 GP', 
+        {
+          id: 1,
+          season: '2005',
+          round: '2',
+          gpName: 'Round 2 GP',
           winnerId: 'driver1',
-          winnerGivenName: 'Driver', 
-          winnerFamilyName: 'One', 
-          createdAt: new Date(), 
-          updatedAt: new Date() 
+          winnerGivenName: 'Driver',
+          winnerFamilyName: 'One',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
-        { 
-          id: 2, 
-          season: '2005', 
-          round: '3', 
-          gpName: 'Round 3 GP', 
+        {
+          id: 2,
+          season: '2005',
+          round: '3',
+          gpName: 'Round 3 GP',
           winnerId: 'driver2',
-          winnerGivenName: 'Driver', 
-          winnerFamilyName: 'Two', 
-          createdAt: new Date(), 
-          updatedAt: new Date() 
+          winnerGivenName: 'Driver',
+          winnerFamilyName: 'Two',
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ];
-      
-      (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue(mockCachedRaces);
-      
+
+      (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue(
+        mockCachedRaces,
+      );
+
       const result = await service.getRaceWinners(year);
-      
+
       // Verify the results are ordered by round number (2, 3, 10) not string order (10, 2, 3)
       expect(result).toEqual([
-        { 
+        {
           round: '2',
-          gpName: 'Round 2 GP', 
+          gpName: 'Round 2 GP',
           winnerId: 'driver1',
-          winnerGivenName: 'Driver', 
-          winnerFamilyName: 'One'
+          winnerGivenName: 'Driver',
+          winnerFamilyName: 'One',
         },
-        { 
+        {
           round: '3',
-          gpName: 'Round 3 GP', 
+          gpName: 'Round 3 GP',
           winnerId: 'driver2',
-          winnerGivenName: 'Driver', 
-          winnerFamilyName: 'Two'
+          winnerGivenName: 'Driver',
+          winnerFamilyName: 'Two',
         },
-        { 
+        {
           round: '10',
-          gpName: 'Round 10 GP', 
+          gpName: 'Round 10 GP',
           winnerId: 'driver3',
-          winnerGivenName: 'Driver', 
-          winnerFamilyName: 'Three'
+          winnerGivenName: 'Driver',
+          winnerFamilyName: 'Three',
         },
       ]);
     });
 
     it('should fetch from API and store in database if no cached race winners exist', async () => {
       const year = 2005;
-      
+
       // Mock empty database
       (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue([]);
-      
+
       const baseUrl = 'https://api.jolpi.ca/ergast/f1';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
         return undefined;
       });
-      
-      const mockData = { 
-        MRData: { 
-          RaceTable: { 
+
+      const mockData = {
+        MRData: {
+          RaceTable: {
             Races: [
               {
                 round: '1',
@@ -216,10 +221,10 @@ describe('RaceWinnersService', () => {
                     Driver: {
                       driverId: 'fisichella',
                       givenName: 'Giancarlo',
-                      familyName: 'Fisichella'
-                    }
-                  }
-                ]
+                      familyName: 'Fisichella',
+                    },
+                  },
+                ],
               },
               {
                 round: '2',
@@ -229,39 +234,37 @@ describe('RaceWinnersService', () => {
                     Driver: {
                       driverId: 'alonso',
                       givenName: 'Fernando',
-                      familyName: 'Alonso'
-                    }
-                  }
-                ]
-              }
-            ]
-          } 
-        } 
-      };
-      
-      const mockDtos = [
-        { 
-          round: '1',
-          gpName: 'Australian Grand Prix', 
-          winnerId: 'fisichella',
-          winnerGivenName: 'Giancarlo', 
-          winnerFamilyName: 'Fisichella'
+                      familyName: 'Alonso',
+                    },
+                  },
+                ],
+              },
+            ],
+          },
         },
-        { 
+      };
+
+      const mockDtos = [
+        {
+          round: '1',
+          gpName: 'Australian Grand Prix',
+          winnerId: 'fisichella',
+          winnerGivenName: 'Giancarlo',
+          winnerFamilyName: 'Fisichella',
+        },
+        {
           round: '2',
-          gpName: 'Malaysian Grand Prix', 
+          gpName: 'Malaysian Grand Prix',
           winnerId: 'alonso',
-          winnerGivenName: 'Fernando', 
-          winnerFamilyName: 'Alonso'
+          winnerGivenName: 'Fernando',
+          winnerFamilyName: 'Alonso',
         },
       ];
 
-      // Create a spy on the makeRateLimitedRequest method before replacing its implementation
-      const makeRateLimitedRequestSpy = jest.spyOn(
-        service as any,
-        'makeRateLimitedRequest',
-      ).mockResolvedValue(mockData);
-      
+      // Mock the shared utility method
+      const makeRateLimitedRequestSpy =
+        TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockData);
+
       // Configure mapper mock to return appropriate DTOs
       (mapper.mapToRaceDtos as jest.Mock).mockReturnValue(mockDtos);
 
@@ -271,55 +274,58 @@ describe('RaceWinnersService', () => {
 
       // Verify correct interactions
       expect(prismaService.raceWinner.findMany).toHaveBeenCalledTimes(1);
-      expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(`${baseUrl}/${year}/results/1.json`);
-      
+      expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(
+        httpService,
+        `${baseUrl}/${year}/results/1.json`,
+      );
+
       // Verify that data was stored in the database
       expect(prismaService.raceWinner.upsert).toHaveBeenCalledWith({
-        where: { 
+        where: {
           season_round: {
             season: year.toString(),
             round: '1',
-          }
+          },
         },
-        update: { 
-          gpName: 'Australian Grand Prix', 
+        update: {
+          gpName: 'Australian Grand Prix',
           winnerId: 'fisichella',
-          winnerGivenName: 'Giancarlo', 
-          winnerFamilyName: 'Fisichella'
+          winnerGivenName: 'Giancarlo',
+          winnerFamilyName: 'Fisichella',
         },
-        create: { 
+        create: {
           season: year.toString(),
           round: '1',
-          gpName: 'Australian Grand Prix', 
+          gpName: 'Australian Grand Prix',
           winnerId: 'fisichella',
-          winnerGivenName: 'Giancarlo', 
-          winnerFamilyName: 'Fisichella'
+          winnerGivenName: 'Giancarlo',
+          winnerFamilyName: 'Fisichella',
         },
       });
-      
+
       expect(prismaService.raceWinner.upsert).toHaveBeenCalledWith({
-        where: { 
+        where: {
           season_round: {
             season: year.toString(),
             round: '2',
-          }
+          },
         },
-        update: { 
-          gpName: 'Malaysian Grand Prix', 
+        update: {
+          gpName: 'Malaysian Grand Prix',
           winnerId: 'alonso',
-          winnerGivenName: 'Fernando', 
-          winnerFamilyName: 'Alonso'
+          winnerGivenName: 'Fernando',
+          winnerFamilyName: 'Alonso',
         },
-        create: { 
+        create: {
           season: year.toString(),
           round: '2',
-          gpName: 'Malaysian Grand Prix', 
+          gpName: 'Malaysian Grand Prix',
           winnerId: 'alonso',
-          winnerGivenName: 'Fernando', 
-          winnerFamilyName: 'Alonso'
+          winnerGivenName: 'Fernando',
+          winnerFamilyName: 'Alonso',
         },
       });
-      
+
       // Verify the result
       expect(result).toEqual(mockDtos);
     });
@@ -328,67 +334,10 @@ describe('RaceWinnersService', () => {
       const year = 2005;
       (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue([]);
       (configService.get as jest.Mock).mockReturnValue(undefined);
-      
+
       await expect(service.getRaceWinners(year)).rejects.toThrow(
         'BASE_URL not configured in .env file',
       );
-    });
-  });
-  
-  describe('makeRateLimitedRequest', () => {
-    it('should handle rate limiting using retry-after header', async () => {
-      const mockData = { test: 'data' };
-      const mockResponse = { 
-        data: mockData, 
-        headers: { 'retry-after': '1' } 
-      };
-      
-      (httpService.get as jest.Mock).mockReturnValue(of(mockResponse));
-      
-      // Use mockImplementation on the spy instead of replacing setTimeout completely
-      const setTimeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation((fn: any) => {
-        fn();
-        return null as any;
-      });
-      
-      const result = await (service as any).makeRateLimitedRequest('test-url');
-      
-      expect(setTimeoutSpy).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-      
-      // Restore the original spy
-      setTimeoutSpy.mockRestore();
-    });
-    
-    it('should retry on 429 errors', async () => {
-      const mockData = { test: 'data' };
-      const mockError = { 
-        response: { 
-          status: 429, 
-          headers: { 'retry-after': '1' } 
-        }
-      };
-      
-      const httpGetSpy = httpService.get as jest.Mock;
-      // First call fails with 429, second call succeeds
-      httpGetSpy
-        .mockImplementationOnce(() => throwError(() => mockError))
-        .mockImplementationOnce(() => of({ data: mockData, headers: {} }));
-      
-      // Use mockImplementation on the spy instead of replacing setTimeout completely
-      const setTimeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation((fn: any) => {
-        fn();
-        return null as any;
-      });
-      
-      const result = await (service as any).makeRateLimitedRequest('test-url');
-      
-      expect(httpGetSpy).toHaveBeenCalledTimes(2);
-      expect(setTimeoutSpy).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-      
-      // Restore the original spy
-      setTimeoutSpy.mockRestore();
     });
   });
 });

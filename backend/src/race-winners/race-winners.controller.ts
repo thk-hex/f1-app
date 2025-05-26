@@ -10,13 +10,19 @@ export class RaceWinnersController {
 
   @Get(':year')
   @ApiOperation({ summary: 'Get all race winners for a specific year' })
-  @ApiParam({ name: 'year', description: 'The year to fetch race winners for', example: 2021 })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'List of race winners for the specified year',
-    type: [RaceDto] 
+  @ApiParam({
+    name: 'year',
+    description: 'The year to fetch race winners for',
+    example: 2021,
   })
-  async getRaceWinners(@Param('year', ParseIntPipe) year: number): Promise<RaceDto[]> {
+  @ApiResponse({
+    status: 200,
+    description: 'List of race winners for the specified year',
+    type: [RaceDto],
+  })
+  async getRaceWinners(
+    @Param('year', ParseIntPipe) year: number,
+  ): Promise<RaceDto[]> {
     return this.raceWinnersService.getRaceWinners(year);
   }
 }

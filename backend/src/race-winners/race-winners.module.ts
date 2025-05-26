@@ -8,6 +8,6 @@ import { PrismaModule } from '../prisma/prisma.module';
 @Module({
   imports: [HttpModule, PrismaModule],
   providers: [RaceWinnersService, RaceWinnersMapper],
-  controllers: [RaceWinnersController]
+  controllers: [RaceWinnersController],
 })
 export class RaceWinnersModule {}

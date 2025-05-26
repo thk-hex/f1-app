@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import { firstValueFrom } from 'rxjs';
 import { ChampionsMapper } from './champions.mapper';
 import { SeasonDto } from './dto/season.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { BadRequestException } from '@nestjs/common';
+import { F1ValidationUtil, HttpRateLimiterUtil } from '../shared/utils';
 
 @Injectable()
 export class ChampionsService {
@@ -17,20 +16,7 @@ export class ChampionsService {
   ) {}
 
   private validateGpStartYear(startYear: number): void {
-    const currentYear = new Date().getFullYear();
-    const MIN_VALID_YEAR = 1950;
-    
-    if (startYear < MIN_VALID_YEAR) {
-      throw new BadRequestException(
-        `GP_START_YEAR must be ${MIN_VALID_YEAR} or later. Formula 1 World Championship started in ${MIN_VALID_YEAR}.`
-      );
-    }
-    
-    if (startYear > currentYear) {
-      throw new BadRequestException(
-        `GP_START_YEAR cannot be greater than the current year (${currentYear}).`
-      );
-    }
+    F1ValidationUtil.validateGpStartYear(startYear, true);
   }
 
   async getChampions(): Promise<SeasonDto[]> {
@@ -41,7 +27,7 @@ export class ChampionsService {
 
     // If we have cached data, return it directly
     if (cachedChampions.length > 0) {
-      return cachedChampions.map(champion => ({
+      return cachedChampions.map((champion) => ({
         season: champion.season,
         givenName: champion.givenName,
         familyName: champion.familyName,
@@ -51,30 +37,31 @@ export class ChampionsService {
 
     // If no cached data, fetch from API and store in database
     const baseUrl = this.configService.get<string>('BASE_URL');
-    if (!baseUrl) {
-      throw new Error('BASE_URL not configured in .env file');
-    }
+    F1ValidationUtil.validateBaseUrl(baseUrl);
 
     const currentYear = new Date().getFullYear();
     const startYear = this.configService.get<number>('GP_START_YEAR') || 2005;
-    
+
     // Validate GP_START_YEAR
     this.validateGpStartYear(startYear);
-    
+
     const seasons: SeasonDto[] = [];
 
     // Process years sequentially with rate limiting
     for (let year = startYear; year <= currentYear; year++) {
       const apiUrl = `${baseUrl}/${year}/driverstandings/1.json`;
-      
+
       try {
-        const response = await this.makeRateLimitedRequest(apiUrl);
+        const response = await HttpRateLimiterUtil.makeRateLimitedRequest(
+          this.httpService,
+          apiUrl,
+        );
         const seasonDto = this.championsMapper.mapToSeasonDto(response);
-        
+
         if (seasonDto && seasonDto.season) {
           // Add to our result array
           seasons.push(seasonDto);
-          
+
           // Store in database
           await this.prisma.champion.upsert({
             where: { season: seasonDto.season },
@@ -92,50 +79,14 @@ export class ChampionsService {
           });
         }
       } catch (error) {
-        console.error(`Error fetching champion standings for ${year}:`, error.message);
+        console.error(
+          `Error fetching champion standings for ${year}:`,
+          error.message,
+        );
         // Continue with the next year even if one fails
       }
     }
 
     return seasons;
-  }
-
-  private async makeRateLimitedRequest(url: string): Promise<any> {
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(url)
-      );
-      
-      const data = response.data;
-      const headers = response.headers;
-
-      // Check if there's a rate limit header indicating when we can make the next request
-      const retryAfter = headers['retry-after'] || headers['x-ratelimit-reset'];
-      
-      if (retryAfter) {
-        // If header exists, wait for the specified time
-        const waitTimeMs = parseInt(retryAfter, 10) * 1000;
-        await new Promise(resolve => setTimeout(resolve, waitTimeMs));
-      } else {
-        // Default rate limiting: 4 requests per second = 250ms between requests
-        await new Promise(resolve => setTimeout(resolve, 250));
-      }
-
-      return data;
-    } catch (error) {
-      // If we hit a rate limit, wait and try again
-      if (error.response && error.response.status === 429) {
-        const retryAfter = error.response.headers['retry-after'] || error.response.headers['x-ratelimit-reset'] || 1;
-        const waitTimeMs = parseInt(retryAfter, 10) * 1000;
-        
-        console.log(`Rate limit hit, waiting for ${waitTimeMs}ms before retrying...`);
-        await new Promise(resolve => setTimeout(resolve, waitTimeMs));
-        
-        // Retry the request after waiting
-        return this.makeRateLimitedRequest(url);
-      }
-      
-      throw error;
-    }
   }
 }

@@ -48,7 +48,7 @@ describe('RaceWinnersController', () => {
       mockRace2.winnerFamilyName = 'Alonso';
 
       const mockResult = [mockRace1, mockRace2];
-      
+
       mockRaceWinnersService.getRaceWinners.mockResolvedValue(mockResult);
 
       const result = await controller.getRaceWinners(year);
@@ -64,7 +64,9 @@ describe('RaceWinnersController', () => {
       const mockError = new Error('Service error');
       mockRaceWinnersService.getRaceWinners.mockRejectedValue(mockError);
 
-      await expect(controller.getRaceWinners(year)).rejects.toThrow('Service error');
+      await expect(controller.getRaceWinners(year)).rejects.toThrow(
+        'Service error',
+      );
     });
   });
 });

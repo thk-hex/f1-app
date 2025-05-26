@@ -1,53 +1,15 @@
 import { PrismaClient } from '@prisma/client';
-import axios from 'axios';
 import * as dotenv from 'dotenv';
+import { F1ValidationUtil, HttpRateLimiterUtil } from '../src/shared/utils';
 
 // Load environment variables
 dotenv.config();
 
 const prisma = new PrismaClient();
 
-function validateGpStartYear(startYear: number): void {
-  const currentYear = new Date().getFullYear();
-  const MIN_VALID_YEAR = 1950;
-  
-  if (startYear < MIN_VALID_YEAR) {
-    throw new Error(
-      `GP_START_YEAR must be ${MIN_VALID_YEAR} or later. Formula 1 World Championship started in ${MIN_VALID_YEAR}.`
-    );
-  }
-  
-  if (startYear > currentYear) {
-    throw new Error(
-      `GP_START_YEAR cannot be greater than the current year (${currentYear}).`
-    );
-  }
-}
 
-async function makeRateLimitedRequest(url: string): Promise<any> {
-  try {
-    const response = await axios.get(url);
-    
-    // Default rate limiting: 4 requests per second = 250ms between requests
-    await new Promise(resolve => setTimeout(resolve, 250));
 
-    return response.data;
-  } catch (error) {
-    // If we hit a rate limit, wait and try again
-    if (error.response && error.response.status === 429) {
-      const retryAfter = error.response.headers['retry-after'] || error.response.headers['x-ratelimit-reset'] || 1;
-      const waitTimeMs = parseInt(retryAfter, 10) * 1000;
-      
-      console.log(`Rate limit hit, waiting for ${waitTimeMs}ms before retrying...`);
-      await new Promise(resolve => setTimeout(resolve, waitTimeMs));
-      
-      // Retry the request after waiting
-      return makeRateLimitedRequest(url);
-    }
-    
-    throw error;
-  }
-}
+
 
 // Function to map API response to Champion data
 function mapToChampion(data: any): { season: string; givenName: string; familyName: string; driverId: string } | null {
@@ -74,14 +36,12 @@ async function main() {
   
   // Check if we have the required environment variables
   const baseUrl = process.env.BASE_URL;
-  if (!baseUrl) {
-    throw new Error('BASE_URL not configured in .env file');
-  }
+  F1ValidationUtil.validateBaseUrl(baseUrl);
   
   const currentYear = new Date().getFullYear();
   const startYear = process.env.GP_START_YEAR ? parseInt(process.env.GP_START_YEAR, 10) : 2005;
   
-  validateGpStartYear(startYear);
+  F1ValidationUtil.validateGpStartYear(startYear);
   
   console.log(`Fetching champions from ${startYear} to ${currentYear}...`);
   
@@ -91,7 +51,7 @@ async function main() {
     
     try {
       console.log(`Fetching champion for ${year}...`);
-      const response = await makeRateLimitedRequest(apiUrl);
+      const response = await HttpRateLimiterUtil.makeRateLimitedRequestWithAxios(apiUrl);
       const champion = mapToChampion(response);
       
       if (champion && champion.season) {

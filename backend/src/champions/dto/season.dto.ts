@@ -13,7 +13,10 @@ export class SeasonDto {
   @Expose()
   givenName: string;
 
-  @ApiProperty({ description: 'Champion driver last name', example: 'Hamilton' })
+  @ApiProperty({
+    description: 'Champion driver last name',
+    example: 'Hamilton',
+  })
   @IsString()
   @Expose()
   familyName: string;

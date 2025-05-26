@@ -256,7 +256,7 @@ describe('ChampionsMapper', () => {
       // Verify it's a proper instance of SeasonDto
       expect(result).toBeInstanceOf(SeasonDto);
       expect(result.constructor.name).toBe('SeasonDto');
-      
+
       // Verify all @Expose decorated properties are present
       expect(result.hasOwnProperty('season')).toBe(true);
       expect(result.hasOwnProperty('givenName')).toBe(true);
@@ -264,4 +264,4 @@ describe('ChampionsMapper', () => {
       expect(result.hasOwnProperty('driverId')).toBe(true);
     });
   });
-}); 
+});
