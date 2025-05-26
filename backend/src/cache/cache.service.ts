@@ -58,9 +58,14 @@ export class CacheService {
     try {
       // Note: Pattern deletion is not directly supported in cache-manager v6
       // This is a simplified implementation that would need Redis-specific logic
-      console.warn(`Pattern deletion for ${pattern} is not implemented in this cache version`);
+      console.warn(
+        `Pattern deletion for ${pattern} is not implemented in this cache version`,
+      );
     } catch (error) {
-      console.error(`Cache pattern delete error for pattern ${pattern}:`, error.message);
+      console.error(
+        `Cache pattern delete error for pattern ${pattern}:`,
+        error.message,
+      );
     }
   }
 
@@ -108,4 +113,4 @@ export class CacheService {
   getRaceWinnersKey(year: number): string {
     return `${CacheKeys.RACE_WINNERS}:${year}`;
   }
-} 
+}

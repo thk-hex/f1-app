@@ -8,4 +8,4 @@ export const CACHE_KEY = 'cache:options';
  * @param options Cache configuration options
  */
 export const Cacheable = (options: CacheOptions = {}) =>
-  SetMetadata(CACHE_KEY, options); 
+  SetMetadata(CACHE_KEY, options);

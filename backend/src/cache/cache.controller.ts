@@ -45,7 +45,10 @@ export class CacheController {
   @Delete('race-winners/:year')
   @ApiOperation({ summary: 'Clear race winners cache for specific year' })
   @ApiParam({ name: 'year', description: 'Year to clear cache for' })
-  @ApiResponse({ status: 200, description: 'Race winners cache cleared for year' })
+  @ApiResponse({
+    status: 200,
+    description: 'Race winners cache cleared for year',
+  })
   async clearRaceWinnersCache(@Param('year') year: string) {
     const key = this.cacheService.getRaceWinnersKey(parseInt(year));
     await this.cacheService.del(key);
@@ -65,4 +68,4 @@ export class CacheController {
       timestamp: new Date().toISOString(),
     };
   }
-} 
+}

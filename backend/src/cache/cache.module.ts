@@ -34,4 +34,4 @@ import { CacheController } from './cache.controller';
   controllers: [CacheController],
   exports: [CacheService],
 })
-export class RedisCacheModule {} 
+export class RedisCacheModule {}

@@ -19,7 +19,7 @@ export class RaceWinnersService {
 
   async getRaceWinners(year: number): Promise<RaceDto[]> {
     const cacheKey = this.cacheService.getRaceWinnersKey(year);
-    
+
     // First check Redis cache
     const cachedRaceWinners = await this.cacheService.get<RaceDto[]>(cacheKey);
     if (cachedRaceWinners) {
@@ -34,7 +34,9 @@ export class RaceWinnersService {
 
     // If we have cached data, sort by round number and return it
     if (cachedRaces.length > 0) {
-      console.log(`Loading race winners for ${year} from database and caching in Redis`);
+      console.log(
+        `Loading race winners for ${year} from database and caching in Redis`,
+      );
       const sortedRaces = cachedRaces.sort(
         (a, b) => parseInt(a.round) - parseInt(b.round),
       );

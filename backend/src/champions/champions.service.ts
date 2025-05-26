@@ -23,7 +23,7 @@ export class ChampionsService {
 
   async getChampions(): Promise<SeasonDto[]> {
     const cacheKey = this.cacheService.getChampionsKey();
-    
+
     // First check Redis cache
     const cachedChampions = await this.cacheService.get<SeasonDto[]>(cacheKey);
     if (cachedChampions) {
@@ -36,10 +36,10 @@ export class ChampionsService {
     if (hasData) {
       console.log('Loading champions data from database and caching in Redis');
       const dbChampions = await this.championsRepository.findAllChampions();
-      
+
       // Cache the database result in Redis for faster future access
       await this.cacheService.set(cacheKey, dbChampions, CacheTTL.CHAMPIONS);
-      
+
       return dbChampions;
     }
 
