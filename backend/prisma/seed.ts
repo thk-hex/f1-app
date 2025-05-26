@@ -1,55 +1,26 @@
-import { PrismaClient } from '@prisma/client';
 import * as dotenv from 'dotenv';
-import { plainToInstance } from 'class-transformer';
 import { F1ValidationUtil, HttpRateLimiterUtil, F1DataProcessorUtil } from '../src/shared/utils';
-import { SeasonDto } from '../src/champions/dto/season.dto';
+import { ChampionsMapper } from '../src/champions/champions.mapper';
+import { ChampionsRepository } from '../src/champions/champions.repository';
+import { PrismaService } from '../src/prisma/prisma.service';
 
 // Load environment variables
 dotenv.config();
 
-const prisma = new PrismaClient();
-
-// Standalone mapper function (replicates ChampionsMapper logic)
-function mapToSeasonDto(data: any): SeasonDto {
-  const dto = new SeasonDto();
-  dto.season = data.MRData?.StandingsTable?.season || '';
-  dto.givenName =
-    data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
-      ?.Driver?.givenName || '';
-  dto.familyName =
-    data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
-      ?.Driver?.familyName || '';
-  dto.driverId =
-    data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
-      ?.Driver?.driverId || '';
-
-  // Use class-transformer to ensure proper instance creation
-  return plainToInstance(SeasonDto, dto, { excludeExtraneousValues: true });
-}
-
-// Standalone repository function (replicates ChampionsRepository logic)
-async function upsertChampion(championData: SeasonDto): Promise<void> {
-  await prisma.champion.upsert({
-    where: { season: championData.season },
-    update: {
-      givenName: championData.givenName,
-      familyName: championData.familyName,
-      driverId: championData.driverId,
-    },
-    create: {
-      season: championData.season,
-      givenName: championData.givenName,
-      familyName: championData.familyName,
-      driverId: championData.driverId,
-    },
-  });
-}
+// Create instances of the services to reuse existing logic
+const prismaService = new PrismaService();
+const championsMapper = new ChampionsMapper();
+const championsRepository = new ChampionsRepository(prismaService);
 
 async function main() {
   console.log('Starting seed...');
   
   const baseUrl = process.env.BASE_URL;
   const startYear = process.env.GP_START_YEAR ? parseInt(process.env.GP_START_YEAR, 10) : 2005;
+  
+  // Validate configuration
+  F1ValidationUtil.validateBaseUrl(baseUrl);
+  F1ValidationUtil.validateGpStartYear(startYear);
   
   const { endYear } = F1DataProcessorUtil.getYearRange(startYear);
   console.log(`Fetching champions from ${startYear} to ${endYear}...`);
@@ -67,13 +38,13 @@ async function main() {
     },
     async (year, apiUrl) => {
       const response = await HttpRateLimiterUtil.makeRateLimitedRequestWithAxios(apiUrl);
-      const championDto = mapToSeasonDto(response);
+      const championDto = championsMapper.mapToSeasonDto(response);
       
       if (championDto && championDto.season) {
         console.log(`Upserting champion for season ${championDto.season}: ${championDto.givenName} ${championDto.familyName} (${championDto.driverId})`);
         
-        // Store in database
-        await upsertChampion(championDto);
+        // Store in database using repository
+        await championsRepository.upsertChampion(championDto);
         return championDto;
       }
       return null;
@@ -90,5 +61,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await prismaService.$disconnect();
   }); 

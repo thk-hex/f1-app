@@ -15,10 +15,6 @@ export class ChampionsService {
     private readonly championsRepository: ChampionsRepository,
   ) {}
 
-  private validateGpStartYear(startYear: number): void {
-    F1ValidationUtil.validateGpStartYear(startYear, true);
-  }
-
   async getChampions(): Promise<SeasonDto[]> {
     // First check if we already have data in the database
     const hasData = await this.championsRepository.hasChampionsData();
@@ -31,7 +27,7 @@ export class ChampionsService {
     const startYear = this.configService.get<number>('GP_START_YEAR') || 2005;
 
     // Validate GP_START_YEAR
-    this.validateGpStartYear(startYear);
+    F1ValidationUtil.validateGpStartYear(startYear, true);
 
     const seasons = await F1DataProcessorUtil.processYearsSequentially(
       {
