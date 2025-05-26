@@ -8,9 +8,9 @@ export enum CacheKeys {
 }
 
 export enum CacheTTL {
-  CHAMPIONS = 3600, // 1 hour for champions data
-  RACE_WINNERS = 1800, // 30 minutes for race winners
-  DEFAULT = 300, // 5 minutes default
+  CHAMPIONS = 3600 * 1000, // 1 hour for champions data (in milliseconds)
+  RACE_WINNERS = 1800 * 1000, // 30 minutes for race winners (in milliseconds)
+  DEFAULT = 300 * 1000, // 5 minutes default (in milliseconds)
 }
 
 @Injectable()
@@ -22,7 +22,9 @@ export class CacheService {
    */
   async get<T>(key: string): Promise<T | undefined> {
     try {
-      return await this.cacheManager.get<T>(key);
+      const result = await this.cacheManager.get<T>(key);
+      console.log(`Cache GET [${key}]: ${result ? 'HIT' : 'MISS'}`);
+      return result;
     } catch (error) {
       console.error(`Cache get error for key ${key}:`, error.message);
       return undefined;
@@ -35,6 +37,7 @@ export class CacheService {
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     try {
       await this.cacheManager.set(key, value, ttl);
+      console.log(`Cache SET [${key}]: SUCCESS, TTL: ${ttl || 'default'}ms`);
     } catch (error) {
       console.error(`Cache set error for key ${key}:`, error.message);
     }
