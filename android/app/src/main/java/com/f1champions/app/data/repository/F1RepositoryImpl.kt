@@ -44,6 +44,7 @@ class F1RepositoryImpl @Inject constructor(
 
     private fun RaceDto.toDomainModel(): Race {
         return Race(
+            round = round,
             grandPrixName = gpName,
             winnerName = "$winnerGivenName $winnerFamilyName",
             winnerId = winnerId

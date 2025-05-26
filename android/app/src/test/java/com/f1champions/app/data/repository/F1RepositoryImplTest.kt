@@ -67,8 +67,8 @@ class F1RepositoryImplTest {
     @Test
     fun `getRaceWinners should return mapped domain models when API call succeeds`() = runTest {
         // Given
-        val raceDto1 = RaceDto("Monaco GP", "hamilton", "Lewis", "Hamilton")
-        val raceDto2 = RaceDto("British GP", "verstappen", "Max", "Verstappen")
+        val raceDto1 = RaceDto("6", "Monaco GP", "hamilton", "Lewis", "Hamilton")
+        val raceDto2 = RaceDto("10", "British GP", "verstappen", "Max", "Verstappen")
         val apiResponse = listOf(raceDto1, raceDto2)
         
         coEvery { apiService.getRaceWinners("2023") } returns apiResponse
@@ -80,6 +80,7 @@ class F1RepositoryImplTest {
             
             val races = result.getOrNull()!!
             assertThat(races).hasSize(2)
+            assertThat(races[0].round).isEqualTo("6")
             assertThat(races[0].grandPrixName).isEqualTo("Monaco GP")
             assertThat(races[0].winnerName).isEqualTo("Lewis Hamilton")
             assertThat(races[0].winnerId).isEqualTo("hamilton")

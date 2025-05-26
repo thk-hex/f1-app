@@ -25,6 +25,7 @@ export class RaceWinnersService {
     // If we have cached data, return it directly
     if (cachedRaces.length > 0) {
       return cachedRaces.map(race => ({
+        round: race.round,
         gpName: race.gpName,
         winnerId: race.winnerId,
         winnerGivenName: race.winnerGivenName,
@@ -45,13 +46,12 @@ export class RaceWinnersService {
       const raceDtos = this.raceWinnersMapper.mapToRaceDtos(response);
       
       // Store in database
-      for (let i = 0; i < raceDtos.length; i++) {
-        const raceDto = raceDtos[i];
+      for (const raceDto of raceDtos) {
         await this.prisma.raceWinner.upsert({
           where: { 
             season_round: {
               season: year.toString(),
-              round: (i + 1).toString(), // Races are 1-indexed
+              round: raceDto.round,
             }
           },
           update: {
@@ -62,7 +62,7 @@ export class RaceWinnersService {
           },
           create: {
             season: year.toString(),
-            round: (i + 1).toString(),
+            round: raceDto.round,
             gpName: raceDto.gpName,
             winnerId: raceDto.winnerId,
             winnerGivenName: raceDto.winnerGivenName,

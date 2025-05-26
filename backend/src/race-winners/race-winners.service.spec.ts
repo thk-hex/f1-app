@@ -108,12 +108,14 @@ describe('RaceWinnersService', () => {
       expect(httpService.get).not.toHaveBeenCalled(); // API should not be called when cache exists
       expect(result).toEqual([
         { 
+          round: '1',
           gpName: 'Australian Grand Prix', 
           winnerId: 'fisichella',
           winnerGivenName: 'Giancarlo', 
           winnerFamilyName: 'Fisichella'
         },
         { 
+          round: '2',
           gpName: 'Malaysian Grand Prix', 
           winnerId: 'alonso',
           winnerGivenName: 'Fernando', 
@@ -139,6 +141,7 @@ describe('RaceWinnersService', () => {
           RaceTable: { 
             Races: [
               {
+                round: '1',
                 raceName: 'Australian Grand Prix',
                 Results: [
                   {
@@ -151,6 +154,7 @@ describe('RaceWinnersService', () => {
                 ]
               },
               {
+                round: '2',
                 raceName: 'Malaysian Grand Prix',
                 Results: [
                   {
@@ -169,12 +173,14 @@ describe('RaceWinnersService', () => {
       
       const mockDtos = [
         { 
+          round: '1',
           gpName: 'Australian Grand Prix', 
           winnerId: 'fisichella',
           winnerGivenName: 'Giancarlo', 
           winnerFamilyName: 'Fisichella'
         },
         { 
+          round: '2',
           gpName: 'Malaysian Grand Prix', 
           winnerId: 'alonso',
           winnerGivenName: 'Fernando', 

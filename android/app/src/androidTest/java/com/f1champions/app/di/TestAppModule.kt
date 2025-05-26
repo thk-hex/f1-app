@@ -43,12 +43,14 @@ object TestAppModule {
         
         coEvery { mockApiService.getRaceWinners(any()) } returns listOf(
             com.f1champions.app.data.model.RaceDto(
+                round = "6",
                 gpName = "Monaco GP",
                 winnerId = "verstappen",
                 winnerGivenName = "Max",
                 winnerFamilyName = "Verstappen"
             ),
             com.f1champions.app.data.model.RaceDto(
+                round = "10",
                 gpName = "British GP",
                 winnerId = "hamilton",
                 winnerGivenName = "Lewis",

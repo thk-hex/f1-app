@@ -14,6 +14,7 @@ export class RaceWinnersMapper {
       return plainToInstance(RaceDto, dto, { excludeExtraneousValues: true });
     }
 
+    dto.round = race.round || '';
     dto.gpName = race.raceName || '';
     
     // Winner is in position 1 (index 0) of the Results array
