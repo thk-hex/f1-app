@@ -4,6 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 
 import { ChampionsMapper } from './champions.mapper';
+import { ChampionsRepository } from './champions.repository';
 import { SeasonDto } from './dto/season.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException } from '@nestjs/common';
@@ -14,6 +15,7 @@ describe('ChampionsService', () => {
   let httpService: HttpService;
   let configService: ConfigService;
   let mapper: ChampionsMapper;
+  let repository: ChampionsRepository;
   let prismaService: PrismaService;
   let consoleErrorSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
@@ -44,6 +46,14 @@ describe('ChampionsService', () => {
           },
         },
         {
+          provide: ChampionsRepository,
+          useValue: {
+            findAllChampions: jest.fn(),
+            hasChampionsData: jest.fn(),
+            upsertChampion: jest.fn(),
+          },
+        },
+        {
           provide: PrismaService,
           useValue: {
             champion: {
@@ -59,6 +69,7 @@ describe('ChampionsService', () => {
     httpService = module.get<HttpService>(HttpService);
     configService = module.get<ConfigService>(ConfigService);
     mapper = module.get<ChampionsMapper>(ChampionsMapper);
+    repository = module.get<ChampionsRepository>(ChampionsRepository);
     prismaService = module.get<PrismaService>(PrismaService);
 
     // Mock console methods to prevent them from showing in test output
@@ -83,32 +94,28 @@ describe('ChampionsService', () => {
     it('should return cached champions if they exist in the database', async () => {
       const mockCachedChampions = [
         {
-          id: 1,
           season: '2005',
           givenName: 'Fernando',
           familyName: 'Alonso',
           driverId: 'alonso',
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
         {
-          id: 2,
           season: '2006',
           givenName: 'Michael',
           familyName: 'Schumacher',
           driverId: 'schumacher',
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
       ];
 
-      (prismaService.champion.findMany as jest.Mock).mockResolvedValue(
+      (repository.hasChampionsData as jest.Mock).mockResolvedValue(true);
+      (repository.findAllChampions as jest.Mock).mockResolvedValue(
         mockCachedChampions,
       );
 
       const result = await service.getChampions();
 
-      expect(prismaService.champion.findMany).toHaveBeenCalled();
+      expect(repository.hasChampionsData).toHaveBeenCalled();
+      expect(repository.findAllChampions).toHaveBeenCalled();
       expect(httpService.get).not.toHaveBeenCalled(); // API should not be called when cache exists
       expect(result).toEqual([
         {
@@ -129,17 +136,15 @@ describe('ChampionsService', () => {
     it('should handle cached champions with missing driverId', async () => {
       const mockCachedChampions = [
         {
-          id: 1,
           season: '2005',
           givenName: 'Fernando',
           familyName: 'Alonso',
-          driverId: null, // Simulate missing driverId
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          driverId: '', // Simulate missing driverId (repository returns empty string)
         },
       ];
 
-      (prismaService.champion.findMany as jest.Mock).mockResolvedValue(
+      (repository.hasChampionsData as jest.Mock).mockResolvedValue(true);
+      (repository.findAllChampions as jest.Mock).mockResolvedValue(
         mockCachedChampions,
       );
 
@@ -157,7 +162,7 @@ describe('ChampionsService', () => {
 
     it('should fetch from API and store in database if no cached champions exist', async () => {
       // Mock empty database
-      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
       const baseUrl = 'https://api.jolpi.ca/ergast/f1';
       (configService.get as jest.Mock).mockImplementation((key) => {
@@ -196,12 +201,12 @@ describe('ChampionsService', () => {
         return new SeasonDto();
       });
 
-      (prismaService.champion.upsert as jest.Mock).mockResolvedValue({}); // Mock successful database upsert
+      (repository.upsertChampion as jest.Mock).mockResolvedValue({}); // Mock successful database upsert
 
       const result = await service.getChampions();
 
       // Verify correct interactions
-      expect(prismaService.champion.findMany).toHaveBeenCalledTimes(1);
+      expect(repository.hasChampionsData).toHaveBeenCalledTimes(1);
       expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(
         httpService,
         `${baseUrl}/2005/driverstandings/1.json`,
@@ -212,34 +217,18 @@ describe('ChampionsService', () => {
       );
 
       // Verify that data was stored in the database with driverId
-      expect(prismaService.champion.upsert).toHaveBeenCalledWith({
-        where: { season: '2005' },
-        update: {
-          givenName: 'Fernando',
-          familyName: 'Alonso',
-          driverId: 'alonso',
-        },
-        create: {
-          season: '2005',
-          givenName: 'Fernando',
-          familyName: 'Alonso',
-          driverId: 'alonso',
-        },
+      expect(repository.upsertChampion).toHaveBeenCalledWith({
+        season: '2005',
+        givenName: 'Fernando',
+        familyName: 'Alonso',
+        driverId: 'alonso',
       });
 
-      expect(prismaService.champion.upsert).toHaveBeenCalledWith({
-        where: { season: '2006' },
-        update: {
-          givenName: 'Michael',
-          familyName: 'Schumacher',
-          driverId: 'schumacher',
-        },
-        create: {
-          season: '2006',
-          givenName: 'Michael',
-          familyName: 'Schumacher',
-          driverId: 'schumacher',
-        },
+      expect(repository.upsertChampion).toHaveBeenCalledWith({
+        season: '2006',
+        givenName: 'Michael',
+        familyName: 'Schumacher',
+        driverId: 'schumacher',
       });
 
       // Verify the result
@@ -248,7 +237,7 @@ describe('ChampionsService', () => {
     });
 
     it('should throw an error if BASE_URL is not configured', async () => {
-      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'GP_START_YEAR') return 2005;
         return undefined;
@@ -261,7 +250,7 @@ describe('ChampionsService', () => {
 
     it('should continue processing years even if one request fails', async () => {
       // Mock empty database
-      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
       const baseUrl = 'https://api.jolpi.ca/ergast/f1';
       (configService.get as jest.Mock).mockImplementation((key) => {
@@ -289,7 +278,7 @@ describe('ChampionsService', () => {
       });
 
       (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(mockDto2006);
-      (prismaService.champion.upsert as jest.Mock).mockResolvedValue({});
+      (repository.upsertChampion as jest.Mock).mockResolvedValue({});
 
       const result = await service.getChampions();
 
@@ -299,19 +288,11 @@ describe('ChampionsService', () => {
       );
 
       // Verify the database operation was called for the successful request with driverId
-      expect(prismaService.champion.upsert).toHaveBeenCalledWith({
-        where: { season: '2006' },
-        update: {
-          givenName: 'Michael',
-          familyName: 'Schumacher',
-          driverId: 'schumacher',
-        },
-        create: {
-          season: '2006',
-          givenName: 'Michael',
-          familyName: 'Schumacher',
-          driverId: 'schumacher',
-        },
+      expect(repository.upsertChampion).toHaveBeenCalledWith({
+        season: '2006',
+        givenName: 'Michael',
+        familyName: 'Schumacher',
+        driverId: 'schumacher',
       });
 
       // We should have at least the 2006 result in our array
@@ -320,7 +301,7 @@ describe('ChampionsService', () => {
 
     it('should handle empty season data from mapper', async () => {
       // Mock empty database
-      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
       const baseUrl = 'https://api.jolpi.ca/ergast/f1';
       (configService.get as jest.Mock).mockImplementation((key) => {
@@ -340,13 +321,13 @@ describe('ChampionsService', () => {
       const result = await service.getChampions();
 
       // Should not call upsert for empty/invalid data
-      expect(prismaService.champion.upsert).not.toHaveBeenCalled();
+      expect(repository.upsertChampion).not.toHaveBeenCalled();
       expect(result).toEqual([]);
     });
 
     it('should throw BadRequestException if GP_START_YEAR is before 1950', async () => {
       // Mock empty database
-      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
       const baseUrl = 'https://api.jolpi.ca/ergast/f1';
       (configService.get as jest.Mock).mockImplementation((key) => {
@@ -363,7 +344,7 @@ describe('ChampionsService', () => {
 
     it('should throw BadRequestException if GP_START_YEAR is after current year', async () => {
       // Mock empty database
-      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
       const baseUrl = 'https://api.jolpi.ca/ergast/f1';
       (configService.get as jest.Mock).mockImplementation((key) => {
@@ -380,7 +361,7 @@ describe('ChampionsService', () => {
 
     it('should accept GP_START_YEAR of 1950 (minimum valid year)', async () => {
       // Mock empty database
-      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
       const baseUrl = 'https://api.jolpi.ca/ergast/f1';
       (configService.get as jest.Mock).mockImplementation((key) => {
@@ -399,18 +380,18 @@ describe('ChampionsService', () => {
       // Mock the shared utility method
       TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockData1950);
       (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(mockDto1950);
-      (prismaService.champion.upsert as jest.Mock).mockResolvedValue({});
+      (repository.upsertChampion as jest.Mock).mockResolvedValue({});
 
       const result = await service.getChampions();
 
       // Should not throw an error and should process the data
       expect(result).toContainEqual(mockDto1950);
-      expect(prismaService.champion.upsert).toHaveBeenCalled();
+      expect(repository.upsertChampion).toHaveBeenCalled();
     });
 
     it('should accept GP_START_YEAR equal to current year', async () => {
       // Mock empty database
-      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
       const baseUrl = 'https://api.jolpi.ca/ergast/f1';
       (configService.get as jest.Mock).mockImplementation((key) => {
@@ -429,13 +410,13 @@ describe('ChampionsService', () => {
       // Mock the shared utility method
       TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockData2006);
       (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(mockDto2006);
-      (prismaService.champion.upsert as jest.Mock).mockResolvedValue({});
+      (repository.upsertChampion as jest.Mock).mockResolvedValue({});
 
       const result = await service.getChampions();
 
       // Should not throw an error and should process the data
       expect(result).toContainEqual(mockDto2006);
-      expect(prismaService.champion.upsert).toHaveBeenCalled();
+      expect(repository.upsertChampion).toHaveBeenCalled();
     });
   });
 });

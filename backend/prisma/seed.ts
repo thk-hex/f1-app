@@ -1,85 +1,86 @@
 import { PrismaClient } from '@prisma/client';
 import * as dotenv from 'dotenv';
-import { F1ValidationUtil, HttpRateLimiterUtil } from '../src/shared/utils';
+import { plainToInstance } from 'class-transformer';
+import { F1ValidationUtil, HttpRateLimiterUtil, F1DataProcessorUtil } from '../src/shared/utils';
+import { SeasonDto } from '../src/champions/dto/season.dto';
 
 // Load environment variables
 dotenv.config();
 
 const prisma = new PrismaClient();
 
+// Standalone mapper function (replicates ChampionsMapper logic)
+function mapToSeasonDto(data: any): SeasonDto {
+  const dto = new SeasonDto();
+  dto.season = data.MRData?.StandingsTable?.season || '';
+  dto.givenName =
+    data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
+      ?.Driver?.givenName || '';
+  dto.familyName =
+    data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
+      ?.Driver?.familyName || '';
+  dto.driverId =
+    data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
+      ?.Driver?.driverId || '';
 
+  // Use class-transformer to ensure proper instance creation
+  return plainToInstance(SeasonDto, dto, { excludeExtraneousValues: true });
+}
 
-
-
-// Function to map API response to Champion data
-function mapToChampion(data: any): { season: string; givenName: string; familyName: string; driverId: string } | null {
-  if (!data.MRData?.StandingsTable?.season) {
-    return null;
-  }
-  
-  return {
-    season: data.MRData?.StandingsTable?.season || '',
-    givenName:
-      data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
-        ?.Driver?.givenName || '',
-    familyName:
-      data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
-        ?.Driver?.familyName || '',
-    driverId:
-      data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
-        ?.Driver?.driverId || '',
-  };
+// Standalone repository function (replicates ChampionsRepository logic)
+async function upsertChampion(championData: SeasonDto): Promise<void> {
+  await prisma.champion.upsert({
+    where: { season: championData.season },
+    update: {
+      givenName: championData.givenName,
+      familyName: championData.familyName,
+      driverId: championData.driverId,
+    },
+    create: {
+      season: championData.season,
+      givenName: championData.givenName,
+      familyName: championData.familyName,
+      driverId: championData.driverId,
+    },
+  });
 }
 
 async function main() {
   console.log('Starting seed...');
   
-  // Check if we have the required environment variables
   const baseUrl = process.env.BASE_URL;
-  F1ValidationUtil.validateBaseUrl(baseUrl);
-  
-  const currentYear = new Date().getFullYear();
   const startYear = process.env.GP_START_YEAR ? parseInt(process.env.GP_START_YEAR, 10) : 2005;
   
-  F1ValidationUtil.validateGpStartYear(startYear);
+  const { endYear } = F1DataProcessorUtil.getYearRange(startYear);
+  console.log(`Fetching champions from ${startYear} to ${endYear}...`);
   
-  console.log(`Fetching champions from ${startYear} to ${currentYear}...`);
-  
-  // Process years sequentially with rate limiting
-  for (let year = startYear; year <= currentYear; year++) {
-    const apiUrl = `${baseUrl}/${year}/driverstandings/1.json`;
-    
-    try {
-      console.log(`Fetching champion for ${year}...`);
+  const champions = await F1DataProcessorUtil.processYearsSequentially(
+    {
+      baseUrl,
+      startYear,
+      onProgress: (year, total, current) => {
+        console.log(`Fetching champion for ${year}... (${current}/${total})`);
+      },
+      onError: (year, error) => {
+        console.error(`Error fetching champion standings for ${year}:`, error.message);
+      },
+    },
+    async (year, apiUrl) => {
       const response = await HttpRateLimiterUtil.makeRateLimitedRequestWithAxios(apiUrl);
-      const champion = mapToChampion(response);
+      const championDto = mapToSeasonDto(response);
       
-      if (champion && champion.season) {
-        console.log(`Upserting champion for season ${champion.season}: ${champion.givenName} ${champion.familyName} (${champion.driverId})`);
+      if (championDto && championDto.season) {
+        console.log(`Upserting champion for season ${championDto.season}: ${championDto.givenName} ${championDto.familyName} (${championDto.driverId})`);
         
         // Store in database
-        await prisma.champion.upsert({
-          where: { season: champion.season },
-          update: {
-            givenName: champion.givenName,
-            familyName: champion.familyName,
-            driverId: champion.driverId,
-          },
-          create: {
-            season: champion.season,
-            givenName: champion.givenName,
-            familyName: champion.familyName,
-            driverId: champion.driverId,
-          },
-        });
+        await upsertChampion(championDto);
+        return championDto;
       }
-    } catch (error) {
-      console.error(`Error fetching champion standings for ${year}:`, error.message);
-      // Continue with the next year even if one fails
-    }
-  }
+      return null;
+    },
+  );
   
-  console.log('Seed completed successfully!');
+  console.log(`Seed completed successfully! Processed ${champions.length} champions.`);
 }
 
 // Execute the seed
