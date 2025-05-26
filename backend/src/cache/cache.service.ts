@@ -22,9 +22,7 @@ export class CacheService {
    */
   async get<T>(key: string): Promise<T | undefined> {
     try {
-      const result = await this.cacheManager.get<T>(key);
-      console.log(`Cache GET [${key}]: ${result ? 'HIT' : 'MISS'}`);
-      return result;
+      return await this.cacheManager.get<T>(key);
     } catch (error) {
       console.error(`Cache get error for key ${key}:`, error.message);
       return undefined;
@@ -37,7 +35,6 @@ export class CacheService {
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     try {
       await this.cacheManager.set(key, value, ttl);
-      console.log(`Cache SET [${key}]: SUCCESS, TTL: ${ttl || 'default'}ms`);
     } catch (error) {
       console.error(`Cache set error for key ${key}:`, error.message);
     }
