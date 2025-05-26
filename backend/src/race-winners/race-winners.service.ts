@@ -19,12 +19,14 @@ export class RaceWinnersService {
     // First check if we already have data in the database for this year
     const cachedRaces = await this.prisma.raceWinner.findMany({
       where: { season: year.toString() },
-      orderBy: { round: 'asc' },
     });
 
-    // If we have cached data, return it directly
+    // If we have cached data, sort by round number and return it
     if (cachedRaces.length > 0) {
-      return cachedRaces.map(race => ({
+      // Sort by round number (convert string to number for proper ordering)
+      const sortedRaces = cachedRaces.sort((a, b) => parseInt(a.round) - parseInt(b.round));
+      
+      return sortedRaces.map(race => ({
         round: race.round,
         gpName: race.gpName,
         winnerId: race.winnerId,
@@ -44,6 +46,9 @@ export class RaceWinnersService {
     try {
       const response = await this.makeRateLimitedRequest(apiUrl);
       const raceDtos = this.raceWinnersMapper.mapToRaceDtos(response);
+      
+      // Sort by round number for consistent ordering
+      raceDtos.sort((a, b) => parseInt(a.round) - parseInt(b.round));
       
       // Store in database
       for (const raceDto of raceDtos) {
