@@ -26,22 +26,12 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
 
-# Make the entrypoint script executable
-RUN chmod +x /app/entrypoint.sh
-    
 EXPOSE 3000
 ENV NODE_ENV production
 
-# Add a system user
 RUN adduser --system --group appuser
-
-# Give permissions to the appuser
 RUN chown -R appuser:appuser /app
-
-# Switch to the appuser
 USER appuser
 
-ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["node", "dist/src/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
