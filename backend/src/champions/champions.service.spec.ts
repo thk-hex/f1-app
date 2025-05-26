@@ -8,6 +8,7 @@ import { SeasonDto } from './dto/season.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException } from '@nestjs/common';
 import { TestUtils } from '../shared/utils';
+import { CacheService } from '../cache/cache.service';
 
 describe('ChampionsService', () => {
   let service: ChampionsService;
@@ -15,6 +16,7 @@ describe('ChampionsService', () => {
   let configService: ConfigService;
   let mapper: ChampionsMapper;
   let repository: ChampionsRepository;
+  let cacheService: CacheService;
   let consoleErrorSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
 
@@ -60,6 +62,15 @@ describe('ChampionsService', () => {
             },
           },
         },
+        {
+          provide: CacheService,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+            getChampionsKey: jest.fn().mockReturnValue('champions'),
+          },
+        },
       ],
     }).compile();
 
@@ -68,6 +79,7 @@ describe('ChampionsService', () => {
     configService = module.get<ConfigService>(ConfigService);
     mapper = module.get<ChampionsMapper>(ChampionsMapper);
     repository = module.get<ChampionsRepository>(ChampionsRepository);
+    cacheService = module.get<CacheService>(CacheService);
 
     // Mock console methods to prevent them from showing in test output
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -78,8 +90,8 @@ describe('ChampionsService', () => {
   });
 
   afterEach(() => {
-    consoleErrorSpy.mockRestore();
-    consoleLogSpy.mockRestore();
+    consoleErrorSpy?.mockRestore();
+    consoleLogSpy?.mockRestore();
     jest.restoreAllMocks();
   });
 

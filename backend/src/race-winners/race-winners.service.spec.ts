@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { RaceWinnersMapper } from './race-winners.mapper';
 import { PrismaService } from '../prisma/prisma.service';
 import { TestUtils } from '../shared/utils';
+import { CacheService } from '../cache/cache.service';
 
 describe('RaceWinnersService', () => {
   let service: RaceWinnersService;
@@ -13,6 +14,7 @@ describe('RaceWinnersService', () => {
   let configService: ConfigService;
   let mapper: RaceWinnersMapper;
   let prismaService: PrismaService;
+  let cacheService: CacheService;
   let consoleErrorSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
 
@@ -47,6 +49,15 @@ describe('RaceWinnersService', () => {
             },
           },
         },
+        {
+          provide: CacheService,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+            getRaceWinnersKey: jest.fn((year) => `race_winners:${year}`),
+          },
+        },
       ],
     }).compile();
 
@@ -55,6 +66,7 @@ describe('RaceWinnersService', () => {
     configService = module.get<ConfigService>(ConfigService);
     mapper = module.get<RaceWinnersMapper>(RaceWinnersMapper);
     prismaService = module.get<PrismaService>(PrismaService);
+    cacheService = module.get<CacheService>(CacheService);
 
     // Mock console methods to prevent them from showing in test output
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -62,8 +74,8 @@ describe('RaceWinnersService', () => {
   });
 
   afterEach(() => {
-    consoleErrorSpy.mockRestore();
-    consoleLogSpy.mockRestore();
+    consoleErrorSpy?.mockRestore();
+    consoleLogSpy?.mockRestore();
   });
 
   it('should be defined', () => {
