@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performClick
 import com.f1champions.app.domain.model.Season
 import com.f1champions.app.presentation.ui.ChampionsUiState
 import com.f1champions.app.presentation.ui.UiState
+import com.f1champions.app.presentation.ui.theme.F1ChampionsTheme
 import com.f1champions.app.presentation.viewmodel.ChampionsViewModel
 import io.mockk.every
 import io.mockk.mockk
@@ -41,10 +42,12 @@ class ChampionsScreenTest {
         
         // When
         composeTestRule.setContent { 
-            ChampionsScreen(
-                onSeasonClick = onSeasonClick,
-                viewModel = viewModel
-            )
+            F1ChampionsTheme {
+                ChampionsScreen(
+                    onSeasonClick = onSeasonClick,
+                    viewModel = viewModel
+                )
+            }
         }
         
         // Then
@@ -71,10 +74,12 @@ class ChampionsScreenTest {
         
         // When
         composeTestRule.setContent { 
-            ChampionsScreen(
-                onSeasonClick = { _, _ -> },
-                viewModel = viewModel
-            )
+            F1ChampionsTheme {
+                ChampionsScreen(
+                    onSeasonClick = { _, _ -> },
+                    viewModel = viewModel
+                )
+            }
         }
         
         // Then

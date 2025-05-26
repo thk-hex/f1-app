@@ -8,15 +8,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +35,7 @@ import com.f1champions.app.presentation.ui.components.ErrorMessage
 import com.f1champions.app.presentation.ui.components.LoadingIndicator
 import com.f1champions.app.presentation.viewmodel.RaceWinnersViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RaceWinnersScreen(
     onBackClick: () -> Unit,
@@ -55,7 +57,7 @@ fun RaceWinnersScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
@@ -111,8 +113,7 @@ fun RaceWinnerItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
-        elevation = 4.dp
+            .padding(8.dp)
     ) {
         Column(
             modifier = Modifier
@@ -122,13 +123,13 @@ fun RaceWinnerItem(
         ) {
             Text(
                 text = race.grandPrixName,
-                style = MaterialTheme.typography.h6,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = race.winnerName,
-                style = MaterialTheme.typography.body1,
-                color = if (isChampion) f1Red else MaterialTheme.colors.onSurface
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isChampion) f1Red else MaterialTheme.colorScheme.onSurface
             )
         }
     }

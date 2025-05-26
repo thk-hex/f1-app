@@ -6,9 +6,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -25,7 +25,7 @@ fun WelcomeScreen(
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colors.background
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier
@@ -36,7 +36,7 @@ fun WelcomeScreen(
         ) {
             Text(
                 text = stringResource(R.string.welcome_screen_title),
-                style = MaterialTheme.typography.h3,
+                style = MaterialTheme.typography.headlineLarge,
                 textAlign = TextAlign.Center
             )
             
@@ -44,7 +44,7 @@ fun WelcomeScreen(
             
             Text(
                 text = stringResource(R.string.welcome_screen_description),
-                style = MaterialTheme.typography.subtitle1,
+                style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center
             )
         }
