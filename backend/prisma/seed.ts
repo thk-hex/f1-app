@@ -7,6 +7,23 @@ dotenv.config();
 
 const prisma = new PrismaClient();
 
+function validateGpStartYear(startYear: number): void {
+  const currentYear = new Date().getFullYear();
+  const MIN_VALID_YEAR = 1950;
+  
+  if (startYear < MIN_VALID_YEAR) {
+    throw new Error(
+      `GP_START_YEAR must be ${MIN_VALID_YEAR} or later. Formula 1 World Championship started in ${MIN_VALID_YEAR}.`
+    );
+  }
+  
+  if (startYear > currentYear) {
+    throw new Error(
+      `GP_START_YEAR cannot be greater than the current year (${currentYear}).`
+    );
+  }
+}
+
 async function makeRateLimitedRequest(url: string): Promise<any> {
   try {
     const response = await axios.get(url);
@@ -63,6 +80,8 @@ async function main() {
   
   const currentYear = new Date().getFullYear();
   const startYear = process.env.GP_START_YEAR ? parseInt(process.env.GP_START_YEAR, 10) : 2005;
+  
+  validateGpStartYear(startYear);
   
   console.log(`Fetching champions from ${startYear} to ${currentYear}...`);
   

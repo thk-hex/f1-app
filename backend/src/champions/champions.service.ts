@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ChampionsMapper } from './champions.mapper';
 import { SeasonDto } from './dto/season.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class ChampionsService {
@@ -14,6 +15,23 @@ export class ChampionsService {
     private readonly championsMapper: ChampionsMapper,
     private readonly prisma: PrismaService,
   ) {}
+
+  private validateGpStartYear(startYear: number): void {
+    const currentYear = new Date().getFullYear();
+    const MIN_VALID_YEAR = 1950;
+    
+    if (startYear < MIN_VALID_YEAR) {
+      throw new BadRequestException(
+        `GP_START_YEAR must be ${MIN_VALID_YEAR} or later. Formula 1 World Championship started in ${MIN_VALID_YEAR}.`
+      );
+    }
+    
+    if (startYear > currentYear) {
+      throw new BadRequestException(
+        `GP_START_YEAR cannot be greater than the current year (${currentYear}).`
+      );
+    }
+  }
 
   async getChampions(): Promise<SeasonDto[]> {
     // First check if we already have data in the database
@@ -39,6 +57,10 @@ export class ChampionsService {
 
     const currentYear = new Date().getFullYear();
     const startYear = this.configService.get<number>('GP_START_YEAR') || 2005;
+    
+    // Validate GP_START_YEAR
+    this.validateGpStartYear(startYear);
+    
     const seasons: SeasonDto[] = [];
 
     // Process years sequentially with rate limiting

@@ -6,6 +6,7 @@ import { of, throwError } from 'rxjs';
 import { ChampionsMapper } from './champions.mapper';
 import { SeasonDto } from './dto/season.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadRequestException } from '@nestjs/common';
 
 describe('ChampionsService', () => {
   let service: ChampionsService;
@@ -302,6 +303,110 @@ describe('ChampionsService', () => {
       // Should not call upsert for empty/invalid data
       expect(prismaService.champion.upsert).not.toHaveBeenCalled();
       expect(result).toEqual([]);
+    });
+
+    it('should throw BadRequestException if GP_START_YEAR is before 1950', async () => {
+      // Mock empty database
+      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      
+      const baseUrl = 'https://api.jolpi.ca/ergast/f1';
+      (configService.get as jest.Mock).mockImplementation((key) => {
+        if (key === 'BASE_URL') return baseUrl;
+        if (key === 'GP_START_YEAR') return 1949; // Invalid year - before 1950
+        return undefined;
+      });
+      
+      await expect(service.getChampions()).rejects.toThrow(BadRequestException);
+      await expect(service.getChampions()).rejects.toThrow(
+        'GP_START_YEAR must be 1950 or later. Formula 1 World Championship started in 1950.'
+      );
+    });
+
+    it('should throw BadRequestException if GP_START_YEAR is after current year', async () => {
+      // Mock empty database
+      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      
+      const baseUrl = 'https://api.jolpi.ca/ergast/f1';
+      (configService.get as jest.Mock).mockImplementation((key) => {
+        if (key === 'BASE_URL') return baseUrl;
+        if (key === 'GP_START_YEAR') return 2007; // Invalid year - after current year (2006)
+        return undefined;
+      });
+      
+      await expect(service.getChampions()).rejects.toThrow(BadRequestException);
+      await expect(service.getChampions()).rejects.toThrow(
+        'GP_START_YEAR cannot be greater than the current year (2006).'
+      );
+    });
+
+    it('should accept GP_START_YEAR of 1950 (minimum valid year)', async () => {
+      // Mock empty database
+      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      
+      const baseUrl = 'https://api.jolpi.ca/ergast/f1';
+      (configService.get as jest.Mock).mockImplementation((key) => {
+        if (key === 'BASE_URL') return baseUrl;
+        if (key === 'GP_START_YEAR') return 1950; // Valid minimum year
+        return undefined;
+      });
+      
+      const mockData1950 = { MRData: { StandingsTable: { season: '1950' } } };
+      const mockDto1950 = new SeasonDto();
+      mockDto1950.season = '1950';
+      mockDto1950.givenName = 'Giuseppe';
+      mockDto1950.familyName = 'Farina';
+      mockDto1950.driverId = 'farina';
+      
+      // Create a spy on the makeRateLimitedRequest method
+      const makeRateLimitedRequestSpy = jest.spyOn(
+        service as any,
+        'makeRateLimitedRequest',
+      );
+      
+      makeRateLimitedRequestSpy.mockResolvedValue(mockData1950);
+      (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(mockDto1950);
+      (prismaService.champion.upsert as jest.Mock).mockResolvedValue({});
+      
+      const result = await service.getChampions();
+      
+      // Should not throw an error and should process the data
+      expect(result).toContainEqual(mockDto1950);
+      expect(prismaService.champion.upsert).toHaveBeenCalled();
+    });
+
+    it('should accept GP_START_YEAR equal to current year', async () => {
+      // Mock empty database
+      (prismaService.champion.findMany as jest.Mock).mockResolvedValue([]);
+      
+      const baseUrl = 'https://api.jolpi.ca/ergast/f1';
+      (configService.get as jest.Mock).mockImplementation((key) => {
+        if (key === 'BASE_URL') return baseUrl;
+        if (key === 'GP_START_YEAR') return 2006; // Valid - equal to current year
+        return undefined;
+      });
+      
+      const mockData2006 = { MRData: { StandingsTable: { season: '2006' } } };
+      const mockDto2006 = new SeasonDto();
+      mockDto2006.season = '2006';
+      mockDto2006.givenName = 'Michael';
+      mockDto2006.familyName = 'Schumacher';
+      mockDto2006.driverId = 'schumacher';
+      
+      // Create a spy on the makeRateLimitedRequest method
+      const makeRateLimitedRequestSpy = jest.spyOn(
+        service as any,
+        'makeRateLimitedRequest',
+      );
+      
+      makeRateLimitedRequestSpy.mockResolvedValue(mockData2006);
+      (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(mockDto2006);
+      (prismaService.champion.upsert as jest.Mock).mockResolvedValue({});
+      
+      const result = await service.getChampions();
+      
+      // Should not throw an error and should process the data
+      expect(result).toContainEqual(mockDto2006);
+      expect(prismaService.champion.upsert).toHaveBeenCalled();
     });
   });
   

@@ -4,6 +4,16 @@
 
 This is the backend service for the F1 Champions application. It provides data about Formula 1 champions across different seasons.
 
+## Environment Variables
+
+The application requires the following environment variables:
+
+- `BASE_URL`: The base URL for the Ergast F1 API (e.g., `https://api.jolpi.ca/ergast/f1`)
+- `GP_START_YEAR`: The starting year for fetching F1 champions data (optional, defaults to 2005)
+  - **Valid range**: 1950 (when F1 World Championship started) to current year
+  - **Validation**: The application will return a 400 Bad Request error if GP_START_YEAR is outside this range
+- `DATABASE_URL`: PostgreSQL connection string
+
 ## Database Setup
 
 The application uses PostgreSQL as its database. Before running the application, make sure you have PostgreSQL installed and running.
