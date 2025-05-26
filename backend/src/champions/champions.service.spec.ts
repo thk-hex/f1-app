@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ChampionsService } from './champions.service';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-
 import { ChampionsMapper } from './champions.mapper';
 import { ChampionsRepository } from './champions.repository';
 import { SeasonDto } from './dto/season.dto';
@@ -16,7 +15,6 @@ describe('ChampionsService', () => {
   let configService: ConfigService;
   let mapper: ChampionsMapper;
   let repository: ChampionsRepository;
-  let prismaService: PrismaService;
   let consoleErrorSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
 
@@ -70,7 +68,6 @@ describe('ChampionsService', () => {
     configService = module.get<ConfigService>(ConfigService);
     mapper = module.get<ChampionsMapper>(ChampionsMapper);
     repository = module.get<ChampionsRepository>(ChampionsRepository);
-    prismaService = module.get<PrismaService>(PrismaService);
 
     // Mock console methods to prevent them from showing in test output
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});

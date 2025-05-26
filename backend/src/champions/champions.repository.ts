@@ -47,4 +47,4 @@ export class ChampionsRepository {
     const count = await this.prisma.champion.count();
     return count > 0;
   }
-} 
+}
