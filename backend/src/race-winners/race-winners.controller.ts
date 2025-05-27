@@ -1,6 +1,7 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { RaceWinnersService } from './race-winners.service';
 import { RaceDto } from './dto/race.dto';
+import { YearParamDto } from './dto/year-param.dto';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('race-winners')
@@ -12,8 +13,9 @@ export class RaceWinnersController {
   @ApiOperation({ summary: 'Get all race winners for a specific year' })
   @ApiParam({
     name: 'year',
-    description: 'The year to fetch race winners for',
+    description: 'The year to fetch race winners for (1950 - current year)',
     example: 2021,
+    type: 'number',
   })
   @ApiResponse({
     status: 200,
@@ -21,8 +23,8 @@ export class RaceWinnersController {
     type: [RaceDto],
   })
   async getRaceWinners(
-    @Param('year', ParseIntPipe) year: number,
+    @Param() params: YearParamDto,
   ): Promise<RaceDto[]> {
-    return this.raceWinnersService.getRaceWinners(year);
+    return this.raceWinnersService.getRaceWinners(params.year);
   }
 }

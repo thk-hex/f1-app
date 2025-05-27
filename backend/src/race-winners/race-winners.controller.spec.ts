@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RaceWinnersController } from './race-winners.controller';
 import { RaceWinnersService } from './race-winners.service';
 import { RaceDto } from './dto/race.dto';
+import { YearParamDto } from './dto/year-param.dto';
 
 describe('RaceWinnersController', () => {
   let controller: RaceWinnersController;
@@ -32,7 +33,7 @@ describe('RaceWinnersController', () => {
 
   describe('getRaceWinners', () => {
     it('should call raceWinnersService.getRaceWinners with the provided year and return its result', async () => {
-      const year = 2005;
+      const yearParam = { year: 2005 } as YearParamDto;
       const mockRace1 = new RaceDto();
       mockRace1.round = '1';
       mockRace1.gpName = 'Australian Grand Prix';
@@ -51,20 +52,20 @@ describe('RaceWinnersController', () => {
 
       mockRaceWinnersService.getRaceWinners.mockResolvedValue(mockResult);
 
-      const result = await controller.getRaceWinners(year);
+      const result = await controller.getRaceWinners(yearParam);
 
-      expect(service.getRaceWinners).toHaveBeenCalledWith(year);
+      expect(service.getRaceWinners).toHaveBeenCalledWith(yearParam.year);
       expect(result).toEqual(mockResult);
       expect(Array.isArray(result)).toBeTruthy();
       expect(result.length).toBe(2);
     });
 
     it('should propagate errors from raceWinnersService.getRaceWinners', async () => {
-      const year = 2005;
+      const yearParam = { year: 2005 } as YearParamDto;
       const mockError = new Error('Service error');
       mockRaceWinnersService.getRaceWinners.mockRejectedValue(mockError);
 
-      await expect(controller.getRaceWinners(year)).rejects.toThrow(
+      await expect(controller.getRaceWinners(yearParam)).rejects.toThrow(
         'Service error',
       );
     });
