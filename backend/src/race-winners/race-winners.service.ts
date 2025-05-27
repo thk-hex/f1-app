@@ -30,6 +30,9 @@ export class RaceWinnersService {
     // Then check if we already have data in the database for this year
     const cachedRaces = await this.prisma.raceWinner.findMany({
       where: { season: year.toString() },
+      include: {
+        driver: true,
+      },
     });
 
     // If we have cached data, sort by round number and return it
@@ -44,9 +47,9 @@ export class RaceWinnersService {
       const raceResults = sortedRaces.map((race) => ({
         round: race.round,
         gpName: race.gpName,
-        winnerId: race.winnerId,
-        winnerGivenName: race.winnerGivenName,
-        winnerFamilyName: race.winnerFamilyName,
+        winnerId: race.driver.driverId,
+        winnerGivenName: race.driver.givenName,
+        winnerFamilyName: race.driver.familyName,
       }));
 
       // Cache the database result in Redis for faster future access
@@ -74,6 +77,19 @@ export class RaceWinnersService {
 
       // Store in database
       for (const raceDto of raceDtos) {
+        await this.prisma.driver.upsert({
+          where: { driverId: raceDto.winnerId },
+          update: {
+            givenName: raceDto.winnerGivenName,
+            familyName: raceDto.winnerFamilyName,
+          },
+          create: {
+            driverId: raceDto.winnerId,
+            givenName: raceDto.winnerGivenName,
+            familyName: raceDto.winnerFamilyName,
+          },
+        });
+
         await this.prisma.raceWinner.upsert({
           where: {
             season_round: {
@@ -83,17 +99,13 @@ export class RaceWinnersService {
           },
           update: {
             gpName: raceDto.gpName,
-            winnerId: raceDto.winnerId,
-            winnerGivenName: raceDto.winnerGivenName,
-            winnerFamilyName: raceDto.winnerFamilyName,
+            driverId: raceDto.winnerId,
           },
           create: {
             season: year.toString(),
             round: raceDto.round,
             gpName: raceDto.gpName,
-            winnerId: raceDto.winnerId,
-            winnerGivenName: raceDto.winnerGivenName,
-            winnerFamilyName: raceDto.winnerFamilyName,
+            driverId: raceDto.winnerId,
           },
         });
       }

@@ -47,6 +47,9 @@ describe('RaceWinnersService', () => {
               findMany: jest.fn(),
               upsert: jest.fn(),
             },
+            driver: {
+              upsert: jest.fn(),
+            },
           },
         },
         {
@@ -124,22 +127,34 @@ describe('RaceWinnersService', () => {
           season: '2005',
           round: '1',
           gpName: 'Australian Grand Prix',
-          winnerId: 'fisichella',
-          winnerGivenName: 'Giancarlo',
-          winnerFamilyName: 'Fisichella',
+          driverId: 'fisichella',
           createdAt: new Date(),
           updatedAt: new Date(),
+          driver: {
+            id: 1,
+            driverId: 'fisichella',
+            givenName: 'Giancarlo',
+            familyName: 'Fisichella',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         },
         {
           id: 2,
           season: '2005',
           round: '2',
           gpName: 'Malaysian Grand Prix',
-          winnerId: 'alonso',
-          winnerGivenName: 'Fernando',
-          winnerFamilyName: 'Alonso',
+          driverId: 'alonso',
           createdAt: new Date(),
           updatedAt: new Date(),
+          driver: {
+            id: 2,
+            driverId: 'alonso',
+            givenName: 'Fernando',
+            familyName: 'Alonso',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         },
       ];
 
@@ -154,6 +169,9 @@ describe('RaceWinnersService', () => {
       expect(cacheService.get).toHaveBeenCalledWith('race_winners:2005');
       expect(prismaService.raceWinner.findMany).toHaveBeenCalledWith({
         where: { season: year.toString() },
+        include: {
+          driver: true,
+        },
       });
       expect(cacheService.set).toHaveBeenCalledWith(
         'race_winners:2005',
@@ -188,33 +206,51 @@ describe('RaceWinnersService', () => {
           season: '2005',
           round: '10',
           gpName: 'Round 10 GP',
-          winnerId: 'driver3',
-          winnerGivenName: 'Driver',
-          winnerFamilyName: 'Three',
+          driverId: 'driver3',
           createdAt: new Date(),
           updatedAt: new Date(),
+          driver: {
+            id: 3,
+            driverId: 'driver3',
+            givenName: 'Driver',
+            familyName: 'Three',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         },
         {
           id: 1,
           season: '2005',
           round: '2',
           gpName: 'Round 2 GP',
-          winnerId: 'driver1',
-          winnerGivenName: 'Driver',
-          winnerFamilyName: 'One',
+          driverId: 'driver1',
           createdAt: new Date(),
           updatedAt: new Date(),
+          driver: {
+            id: 1,
+            driverId: 'driver1',
+            givenName: 'Driver',
+            familyName: 'One',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         },
         {
           id: 2,
           season: '2005',
           round: '3',
           gpName: 'Round 3 GP',
-          winnerId: 'driver2',
-          winnerGivenName: 'Driver',
-          winnerFamilyName: 'Two',
+          driverId: 'driver2',
           createdAt: new Date(),
           updatedAt: new Date(),
+          driver: {
+            id: 2,
+            driverId: 'driver2',
+            givenName: 'Driver',
+            familyName: 'Two',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         },
       ];
 
@@ -321,7 +357,8 @@ describe('RaceWinnersService', () => {
       // Configure mapper mock to return appropriate DTOs
       (mapper.mapToRaceDtos as jest.Mock).mockReturnValue(mockDtos);
 
-      (prismaService.raceWinner.upsert as jest.Mock).mockResolvedValue({}); // Mock successful database upsert
+      (prismaService.driver.upsert as jest.Mock).mockResolvedValue({}); // Mock successful driver upsert
+      (prismaService.raceWinner.upsert as jest.Mock).mockResolvedValue({}); // Mock successful race winner upsert
 
       const result = await service.getRaceWinners(year);
 
@@ -332,7 +369,34 @@ describe('RaceWinnersService', () => {
         `${baseUrl}/${year}/results/1.json`,
       );
 
-      // Verify that data was stored in the database
+      // Verify that drivers were upserted first
+      expect(prismaService.driver.upsert).toHaveBeenCalledWith({
+        where: { driverId: 'fisichella' },
+        update: {
+          givenName: 'Giancarlo',
+          familyName: 'Fisichella',
+        },
+        create: {
+          driverId: 'fisichella',
+          givenName: 'Giancarlo',
+          familyName: 'Fisichella',
+        },
+      });
+
+      expect(prismaService.driver.upsert).toHaveBeenCalledWith({
+        where: { driverId: 'alonso' },
+        update: {
+          givenName: 'Fernando',
+          familyName: 'Alonso',
+        },
+        create: {
+          driverId: 'alonso',
+          givenName: 'Fernando',
+          familyName: 'Alonso',
+        },
+      });
+
+      // Verify that race winners were upserted with driver references
       expect(prismaService.raceWinner.upsert).toHaveBeenCalledWith({
         where: {
           season_round: {
@@ -342,17 +406,13 @@ describe('RaceWinnersService', () => {
         },
         update: {
           gpName: 'Australian Grand Prix',
-          winnerId: 'fisichella',
-          winnerGivenName: 'Giancarlo',
-          winnerFamilyName: 'Fisichella',
+          driverId: 'fisichella',
         },
         create: {
           season: year.toString(),
           round: '1',
           gpName: 'Australian Grand Prix',
-          winnerId: 'fisichella',
-          winnerGivenName: 'Giancarlo',
-          winnerFamilyName: 'Fisichella',
+          driverId: 'fisichella',
         },
       });
 
@@ -365,17 +425,13 @@ describe('RaceWinnersService', () => {
         },
         update: {
           gpName: 'Malaysian Grand Prix',
-          winnerId: 'alonso',
-          winnerGivenName: 'Fernando',
-          winnerFamilyName: 'Alonso',
+          driverId: 'alonso',
         },
         create: {
           season: year.toString(),
           round: '2',
           gpName: 'Malaysian Grand Prix',
-          winnerId: 'alonso',
-          winnerGivenName: 'Fernando',
-          winnerFamilyName: 'Alonso',
+          driverId: 'alonso',
         },
       });
 
