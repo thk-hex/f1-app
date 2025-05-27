@@ -8,32 +8,31 @@ plugins {
 
 // JaCoCo configuration
 jacoco {
-    toolVersion = "0.8.11"
+    toolVersion = "0.8.12"
 }
 
 android {
-    compileSdk 36
-    namespace "com.f1champions.app"
+    compileSdk = 36
+    namespace = "com.f1champions.app"
     defaultConfig {
-        applicationId "com.f1champions.app"
-        minSdk 27
-        targetSdk 36
-        versionCode 1
-        versionName "1.0"
+        applicationId = "com.f1champions.app"
+        minSdk = 27
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
 
-        testInstrumentationRunner "com.f1champions.app.HiltTestRunner"
+        testInstrumentationRunner = "com.f1champions.app.HiltTestRunner"
         vectorDrawables {
-            useSupportLibrary true
+            useSupportLibrary = true
         }
     }
 
     buildTypes {
         debug {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -45,7 +44,7 @@ android {
         jvmTarget = '17'
     }
     buildFeatures {
-        compose true
+        compose = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = compose_compiler_version
@@ -66,6 +65,13 @@ android {
         unitTests {
             includeAndroidResources = true
         }
+    }
+    
+    lint {
+        checkReleaseBuilds = true
+        abortOnError = true
+        warningsAsErrors = false
+        lintConfig = file("lint.xml")
     }
 }
 
@@ -114,7 +120,13 @@ afterEvaluate {
             
             // Generated files
             '**/databinding/**/*.*',
-            '**/android/databinding/*Binding.*'
+            '**/android/databinding/*Binding.*',
+            
+            // JVM internal classes (fix for JDK 23 compatibility)
+            '**/sun/**/*.*',
+            '**/java/**/*.*',
+            '**/javax/**/*.*',
+            '**/jdk/**/*.*'
         ]
         
         // Only use debug build directories to avoid release build dependencies
