@@ -1,5 +1,6 @@
 package com.f1champions.app.di
 
+import com.f1champions.app.BuildConfig
 import com.f1champions.app.data.api.F1ApiService
 import com.f1champions.app.data.repository.F1RepositoryImpl
 import com.f1champions.app.domain.repository.F1Repository
@@ -19,8 +20,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-
-    private const val BASE_URL = "http://10.0.2.2:3000"
 
     @Provides
     @Singleton
@@ -49,7 +48,7 @@ object AppModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()
