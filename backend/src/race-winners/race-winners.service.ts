@@ -5,7 +5,7 @@ import { RaceWinnersMapper } from './race-winners.mapper';
 import { RaceDto } from './dto/race.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService, CacheTTL } from '../cache/cache.service';
-import { F1ValidationUtil, HttpRateLimiterUtil } from '../shared/utils';
+import { F1ValidationUtil, HttpRateLimiterUtil, SanitizationUtil } from '../shared/utils';
 
 @Injectable()
 export class RaceWinnersService {
@@ -75,18 +75,37 @@ export class RaceWinnersService {
       // Sort by round number for consistent ordering
       raceDtos.sort((a, b) => parseInt(a.round) - parseInt(b.round));
 
-      // Store in database
+      // Store in database with sanitization
       for (const raceDto of raceDtos) {
+        // Sanitize all race data before database operations
+        const sanitizedRaceData = {
+          round: SanitizationUtil.sanitizeString(raceDto.round, { maxLength: 2, trimWhitespace: true }),
+          gpName: SanitizationUtil.sanitizeString(raceDto.gpName, { maxLength: 100, trimWhitespace: true }),
+          winnerId: SanitizationUtil.sanitizeIdentifier(raceDto.winnerId),
+          winnerGivenName: SanitizationUtil.sanitizeString(raceDto.winnerGivenName, { maxLength: 50, trimWhitespace: true }),
+          winnerFamilyName: SanitizationUtil.sanitizeString(raceDto.winnerFamilyName, { maxLength: 50, trimWhitespace: true }),
+        };
+
+        // Validate sanitized data
+        const validation = SanitizationUtil.validateTextContent(
+          `${sanitizedRaceData.round} ${sanitizedRaceData.gpName} ${sanitizedRaceData.winnerId} ${sanitizedRaceData.winnerGivenName} ${sanitizedRaceData.winnerFamilyName}`
+        );
+        
+        if (!validation.isValid) {
+          console.warn(`Skipping race data for round ${sanitizedRaceData.round} due to validation issues: ${validation.issues.join(', ')}`);
+          continue;
+        }
+
         await this.prisma.driver.upsert({
-          where: { driverId: raceDto.winnerId },
+          where: { driverId: sanitizedRaceData.winnerId },
           update: {
-            givenName: raceDto.winnerGivenName,
-            familyName: raceDto.winnerFamilyName,
+            givenName: sanitizedRaceData.winnerGivenName,
+            familyName: sanitizedRaceData.winnerFamilyName,
           },
           create: {
-            driverId: raceDto.winnerId,
-            givenName: raceDto.winnerGivenName,
-            familyName: raceDto.winnerFamilyName,
+            driverId: sanitizedRaceData.winnerId,
+            givenName: sanitizedRaceData.winnerGivenName,
+            familyName: sanitizedRaceData.winnerFamilyName,
           },
         });
 
@@ -94,18 +113,18 @@ export class RaceWinnersService {
           where: {
             season_round: {
               season: year.toString(),
-              round: raceDto.round,
+              round: sanitizedRaceData.round,
             },
           },
           update: {
-            gpName: raceDto.gpName,
-            driverId: raceDto.winnerId,
+            gpName: sanitizedRaceData.gpName,
+            driverId: sanitizedRaceData.winnerId,
           },
           create: {
             season: year.toString(),
-            round: raceDto.round,
-            gpName: raceDto.gpName,
-            driverId: raceDto.winnerId,
+            round: sanitizedRaceData.round,
+            gpName: sanitizedRaceData.gpName,
+            driverId: sanitizedRaceData.winnerId,
           },
         });
       }
