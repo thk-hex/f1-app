@@ -9,5 +9,6 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [HttpModule, PrismaModule],
   providers: [RaceWinnersService, RaceWinnersMapper],
   controllers: [RaceWinnersController],
+  exports: [RaceWinnersService, RaceWinnersMapper],
 })
 export class RaceWinnersModule {}

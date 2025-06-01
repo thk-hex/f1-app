@@ -21,30 +21,37 @@ export class ChampionsService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async getChampions(): Promise<SeasonDto[]> {
+  async getChampions(forceRefresh: boolean = false): Promise<SeasonDto[]> {
     const cacheKey = this.cacheService.getChampionsKey();
 
-    // First check Redis cache
-    const cachedChampions = await this.cacheService.get<SeasonDto[]>(cacheKey);
-    if (cachedChampions) {
-      console.log('Returning champions data from Redis cache');
-      return cachedChampions;
+    // When forceRefresh is true, skip cache and database checks
+    if (!forceRefresh) {
+      // First check Redis cache
+      const cachedChampions = await this.cacheService.get<SeasonDto[]>(cacheKey);
+      if (cachedChampions) {
+        console.log('✅ CACHE HIT: Returning champions data from Redis cache');
+        return cachedChampions;
+      }
+
+      // Then check if we already have data in the database
+      const hasData = await this.championsRepository.hasChampionsData();
+      if (hasData) {
+        console.log('Loading champions data from database and caching in Redis');
+        const dbChampions = await this.championsRepository.findAllChampions();
+
+        // Cache the database result in Redis for faster future access
+        await this.cacheService.set(cacheKey, dbChampions, CacheTTL.CHAMPIONS);
+
+        return dbChampions;
+      }
     }
 
-    // Then check if we already have data in the database
-    const hasData = await this.championsRepository.hasChampionsData();
-    if (hasData) {
-      console.log('Loading champions data from database and caching in Redis');
-      const dbChampions = await this.championsRepository.findAllChampions();
-
-      // Cache the database result in Redis for faster future access
-      await this.cacheService.set(cacheKey, dbChampions, CacheTTL.CHAMPIONS);
-
-      return dbChampions;
-    }
-
-    // If no cached data, fetch from API and store in database
-    console.log('Fetching champions data from external API');
+    // Fetch from API and store in database (either no data exists or forceRefresh is true)
+    const logMessage = forceRefresh 
+      ? 'Force refresh: Fetching champions data from external API and updating database'
+      : 'Fetching champions data from external API';
+    console.log(logMessage);
+    
     const baseUrl = this.configService.get<string>('BASE_URL');
     const startYear = this.configService.get<number>('GP_START_YEAR');
 
@@ -70,7 +77,7 @@ export class ChampionsService {
         const seasonDto = this.championsMapper.mapToSeasonDto(response);
 
         if (seasonDto && seasonDto.season) {
-          // Store in database
+          // Store in database (upsert will update existing data)
           await this.championsRepository.upsertChampion(seasonDto);
           return seasonDto;
         }

@@ -67,7 +67,21 @@ $ npm run test:cov
 ## API Endpoints
 
 - `GET /champions`: Get a list of all F1 champions
-- `GET /race-winners/year`: Get a list of all race winners for a specific year
+- `GET /race-winners/:year`: Get a list of all race winners for a specific year
+
+### Scheduler Endpoints
+
+- `POST /scheduler/trigger-update`: Manually trigger F1 data update
+- `GET /scheduler/next-run`: Get next scheduled update time
+- `GET /scheduler/status`: Get scheduler status and configuration
+
+### Cache Management
+
+- `GET /cache/health`: Check cache health status
+- `GET /cache/stats`: Get cache statistics
+- `DELETE /cache/champions`: Clear champions cache
+- `DELETE /cache/race-winners/:year`: Clear race winners cache for specific year
+- `DELETE /cache/race-winners`: Clear all race winners cache
 
 ## API Documentation
 
@@ -78,6 +92,20 @@ The API is documented using OpenAPI (Swagger):
 - **OpenAPI JSON**: Get the OpenAPI specification in JSON format at `http://localhost:3000/api-json`
 
 You can use the OpenAPI YAML/JSON to generate client code for your frontend application.
+
+## Automated Data Updates
+
+The application includes an automated scheduler that keeps F1 data up-to-date:
+
+- **Schedule**: Every Monday at 12:00 PM UTC
+- **Updates**: Champions data and race winners for recent years
+- **Force Refresh**: Always fetches from external API to ensure data completeness
+- **Missing Data Detection**: Detects and updates missing races or champions
+- **Cache Management**: Automatically clears cache before updates
+- **Manual Control**: Use `/scheduler/trigger-update` for manual updates
+- **Monitoring**: Check `/scheduler/status` for scheduler information
+
+The scheduler ensures that your F1 data stays current and complete without manual intervention, even if individual races or champions are missing from the database.
 
 ## Implementation Details
 
@@ -91,6 +119,16 @@ The Race Winners module:
 1. Data is stored per season in the database
 2. The API endpoint accepts a year parameter to fetch race winners for that season
 3. Rate limiting is applied to external API requests to avoid hitting rate limits
+
+The Scheduler module:
+1. Runs automated updates every Monday at 12:00 PM UTC
+2. Clears cache before updating to ensure fresh data
+3. **Force refreshes** Champions data from the configured start year to current year
+4. **Force refreshes** Race Winners data for the last 3 years (configurable)
+5. Always fetches from external API to detect missing or new data
+6. Uses upsert operations to update existing records and add missing ones
+7. Includes rate limiting and error handling for resilient operation
+8. Provides API endpoints for manual triggering and status monitoring
 
 ## Trade-offs
 1. The DB seed script fetches champion data from the API before the backend instance launches. If the requirement changes to accommodate a larger dataset, fetching from the API can be disabled. The seed script can then populate only the years without actual data, which will reduce app launch time.
