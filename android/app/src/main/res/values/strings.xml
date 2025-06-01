@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">F1 Champions</string>
+    <string name="welcome_screen_title">F1 Champions</string>
+    <string name="welcome_screen_description">Explore Formula 1 champions throughout the years</string>
+    <string name="champions_screen_title">F1 Champions</string>
+    <string name="race_winners_screen_title">Race Winners (%1$s)</string>
+    <string name="loading">Loading…</string>
+    <string name="error_loading_data">Error loading data</string>
+    <string name="retry">Retry</string>
+</resources> 

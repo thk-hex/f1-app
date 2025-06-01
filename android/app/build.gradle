@@ -1,0 +1,221 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'com.google.devtools.ksp'
+    id 'dagger.hilt.android.plugin'
+    id 'jacoco'
+}
+
+// JaCoCo configuration
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+android {
+    compileSdk = 36
+    namespace = "com.f1champions.app"
+    defaultConfig {
+        applicationId = "com.f1champions.app"
+        minSdk = 27
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "com.f1champions.app.HiltTestRunner"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000\"")
+            minifyEnabled false
+        }
+        release {
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000\"")
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    buildFeatures {
+        compose = true
+        buildFeatures.buildConfig = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = compose_compiler_version
+    }
+    packagingOptions {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += '/META-INF/LICENSE.md'
+            excludes += '/META-INF/LICENSE-notice.md'
+            excludes += '/META-INF/DEPENDENCIES'
+            excludes += '/META-INF/LICENSE'
+            excludes += '/META-INF/LICENSE.txt'
+            excludes += '/META-INF/NOTICE'
+            excludes += '/META-INF/NOTICE.txt'
+        }
+    }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+    
+    lint {
+        checkReleaseBuilds = true
+        abortOnError = true
+        warningsAsErrors = false
+        lintConfig = file("lint.xml")
+    }
+}
+
+// JaCoCo test report configuration
+afterEvaluate {
+    tasks.register('jacocoTestReport', JacocoReport) {
+        dependsOn 'testDebugUnitTest'
+        
+        group = 'Reporting'
+        description = 'Generate JaCoCo coverage reports for the debug build.'
+        
+        reports {
+            xml.required = true
+            html.required = true
+            csv.required = false
+        }
+        
+        def fileFilter = [
+            // Android
+            '**/R.class',
+            '**/R$*.class',
+            '**/BuildConfig.*',
+            '**/Manifest*.*',
+            '**/*Test*.*',
+            'android/**/*.*',
+            
+            // Kotlin
+            '**/*$WhenMappings.*',
+            '**/*$serializer.*',
+            '**/*$$serializer.*',
+            
+            // Hilt/Dagger
+            '**/*_Factory.*',
+            '**/*_MembersInjector.*',
+            '**/Dagger*Component.*',
+            '**/Dagger*Component$Builder.*',
+            '**/*Module_*Factory.*',
+            '**/*_Impl.*',
+            '**/*Hilt*.*',
+            '**/*_HiltModules*.*',
+            '**/*_ComponentTreeDeps*.*',
+            
+            // Compose
+            '**/*ComposableSingletons*.*',
+            '**/*_Kt.*',
+            
+            // Generated files
+            '**/databinding/**/*.*',
+            '**/android/databinding/*Binding.*',
+            
+            // JVM internal classes (fix for JDK 23 compatibility)
+            '**/sun/**/*.*',
+            '**/java/**/*.*',
+            '**/javax/**/*.*',
+            '**/jdk/**/*.*'
+        ]
+        
+        // Only use debug build directories to avoid release build dependencies
+        def debugTree = fileTree(dir: "${buildDir}/intermediates/javac/debug/classes", excludes: fileFilter)
+        def kotlinDebugTree = fileTree(dir: "${buildDir}/tmp/kotlin-classes/debug", excludes: fileFilter)
+        
+        classDirectories.setFrom(files([debugTree, kotlinDebugTree]))
+        
+        def sourceDirs = [
+            "${project.projectDir}/src/main/java",
+            "${project.projectDir}/src/main/kotlin"
+        ]
+        
+        sourceDirectories.setFrom(files(sourceDirs))
+        
+        // Only look for execution data from debug unit tests
+        executionData.setFrom(fileTree(dir: "$buildDir", includes: [
+            'jacoco/testDebugUnitTest.exec'
+        ]))
+    }
+}
+
+dependencies {
+    // Android Core
+    implementation 'androidx.core:core-ktx:1.16.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    
+    // Compose BOM
+    implementation platform("androidx.compose:compose-bom:$compose_bom_version")
+    
+    // Compose
+    implementation "androidx.compose.ui:ui"
+    implementation "androidx.compose.material3:material3"
+    implementation "androidx.compose.material3:material3-window-size-class"
+    implementation "androidx.compose.ui:ui-tooling-preview"
+    implementation 'androidx.activity:activity-compose:1.10.1'
+    implementation "androidx.navigation:navigation-compose:$nav_version"
+    implementation "androidx.hilt:hilt-navigation-compose:1.2.0"
+    
+    // Lifecycle
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version"
+    
+    // Hilt
+    implementation "com.google.dagger:hilt-android:$hilt_version"
+    ksp "com.google.dagger:hilt-android-compiler:$hilt_version"
+    
+    // Retrofit + OkHttp
+    implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
+    implementation "com.squareup.retrofit2:converter-moshi:$retrofit_version"
+    implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
+    implementation "com.squareup.okhttp3:logging-interceptor:$okhttp_version"
+    
+    // Moshi
+    implementation "com.squareup.moshi:moshi:$moshi_version"
+    implementation "com.squareup.moshi:moshi-kotlin:$moshi_version"
+    ksp "com.squareup.moshi:moshi-kotlin-codegen:$moshi_version"
+    
+    // Coroutines
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+    
+    // Unit Tests
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+    testImplementation "io.mockk:mockk:1.13.9"
+    testImplementation "app.cash.turbine:turbine:1.0.0"
+    testImplementation "com.google.truth:truth:1.1.5"
+    testImplementation "androidx.arch.core:core-testing:2.2.0"
+    
+    // Android Tests
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+    androidTestImplementation platform("androidx.compose:compose-bom:$compose_bom_version")
+    androidTestImplementation "androidx.compose.ui:ui-test-junit4"
+    androidTestImplementation "com.google.dagger:hilt-android-testing:$hilt_version"
+    androidTestImplementation "androidx.arch.core:core-testing:2.2.0"
+    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+    androidTestImplementation "io.mockk:mockk-android:1.13.9"
+    androidTestImplementation "app.cash.turbine:turbine:1.0.0"
+    androidTestImplementation "com.google.truth:truth:1.1.5"
+    
+    kspAndroidTest "com.google.dagger:hilt-android-compiler:$hilt_version"
+    
+    // Debug implementations
+    debugImplementation "androidx.compose.ui:ui-tooling"
+    debugImplementation "androidx.compose.ui:ui-test-manifest"
+} 

@@ -13,6 +13,9 @@ export class ChampionsMapper {
     dto.familyName =
       data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
         ?.Driver?.familyName || '';
+    dto.driverId =
+      data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
+        ?.Driver?.driverId || '';
 
     // Use class-transformer to ensure proper instance creation
     return plainToInstance(SeasonDto, dto, { excludeExtraneousValues: true });

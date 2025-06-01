@@ -5,7 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-arm64-openssl-1.1.x"]
 }
 
 datasource db {
@@ -13,13 +14,48 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Champion {
+model Driver {
   id         Int      @id @default(autoincrement())
-  season     String   @unique
+  driverId   String   @unique
   givenName  String
   familyName String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  // Relations
+  champions   Champion[]
+  raceWins    RaceWinner[]
+
+  @@index([driverId])
+}
+
+model Champion {
+  id        Int      @id @default(autoincrement())
+  season    String   @unique
+  driverId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [driverId])
+
   @@index([season])
+  @@index([driverId])
+}
+
+model RaceWinner {
+  id        Int      @id @default(autoincrement())
+  season    String
+  round     String
+  gpName    String
+  driverId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  driver Driver @relation(fields: [driverId], references: [driverId])
+
+  @@unique([season, round], name: "season_round")
+  @@index([season])
+  @@index([driverId])
 }

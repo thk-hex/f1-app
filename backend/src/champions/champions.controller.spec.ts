@@ -36,14 +36,16 @@ describe('ChampionsController', () => {
       mockSeason2005.season = '2005';
       mockSeason2005.givenName = 'Fernando';
       mockSeason2005.familyName = 'Alonso';
+      mockSeason2005.driverId = 'alonso';
 
       const mockSeason2006 = new SeasonDto();
       mockSeason2006.season = '2006';
       mockSeason2006.givenName = 'Michael';
       mockSeason2006.familyName = 'Schumacher';
+      mockSeason2006.driverId = 'schumacher';
 
       const mockResult = [mockSeason2005, mockSeason2006];
-      
+
       mockChampionsService.getChampions.mockResolvedValue(mockResult);
 
       const result = await controller.getChampions();

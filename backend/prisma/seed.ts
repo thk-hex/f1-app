@@ -1,101 +1,57 @@
-import { PrismaClient } from '@prisma/client';
-import axios from 'axios';
 import * as dotenv from 'dotenv';
+import { F1ValidationUtil, HttpRateLimiterUtil, F1DataProcessorUtil } from '../src/shared/utils';
+import { ChampionsMapper } from '../src/champions/champions.mapper';
+import { ChampionsRepository } from '../src/champions/champions.repository';
+import { PrismaService } from '../src/prisma/prisma.service';
 
 // Load environment variables
 dotenv.config();
 
-const prisma = new PrismaClient();
-
-async function makeRateLimitedRequest(url: string): Promise<any> {
-  try {
-    const response = await axios.get(url);
-    
-    // Default rate limiting: 4 requests per second = 250ms between requests
-    await new Promise(resolve => setTimeout(resolve, 250));
-
-    return response.data;
-  } catch (error) {
-    // If we hit a rate limit, wait and try again
-    if (error.response && error.response.status === 429) {
-      const retryAfter = error.response.headers['retry-after'] || error.response.headers['x-ratelimit-reset'] || 1;
-      const waitTimeMs = parseInt(retryAfter, 10) * 1000;
-      
-      console.log(`Rate limit hit, waiting for ${waitTimeMs}ms before retrying...`);
-      await new Promise(resolve => setTimeout(resolve, waitTimeMs));
-      
-      // Retry the request after waiting
-      return makeRateLimitedRequest(url);
-    }
-    
-    throw error;
-  }
-}
-
-// Function to map API response to Champion data
-function mapToChampion(data: any): { season: string; givenName: string; familyName: string } | null {
-  if (!data.MRData?.StandingsTable?.season) {
-    return null;
-  }
-  
-  return {
-    season: data.MRData?.StandingsTable?.season || '',
-    givenName:
-      data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
-        ?.Driver?.givenName || '',
-    familyName:
-      data.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings?.[0]
-        ?.Driver?.familyName || '',
-  };
-}
+// Create instances of the services to reuse existing logic
+const prismaService = new PrismaService();
+const championsMapper = new ChampionsMapper();
+const championsRepository = new ChampionsRepository(prismaService);
 
 async function main() {
   console.log('Starting seed...');
   
-  // Check if we have the required environment variables
   const baseUrl = process.env.BASE_URL;
-  if (!baseUrl) {
-    throw new Error('BASE_URL not configured in .env file');
-  }
-  
-  const currentYear = new Date().getFullYear();
   const startYear = process.env.GP_START_YEAR ? parseInt(process.env.GP_START_YEAR, 10) : 2005;
   
-  console.log(`Fetching champions from ${startYear} to ${currentYear}...`);
+  // Validate configuration
+  F1ValidationUtil.validateBaseUrl(baseUrl);
+  F1ValidationUtil.validateGpStartYear(startYear);
   
-  // Process years sequentially with rate limiting
-  for (let year = startYear; year <= currentYear; year++) {
-    const apiUrl = `${baseUrl}/${year}/driverstandings/1.json`;
-    
-    try {
-      console.log(`Fetching champion for ${year}...`);
-      const response = await makeRateLimitedRequest(apiUrl);
-      const champion = mapToChampion(response);
+  const { endYear } = F1DataProcessorUtil.getYearRange(startYear);
+  console.log(`Fetching champions from ${startYear} to ${endYear}...`);
+  
+  const champions = await F1DataProcessorUtil.processYearsSequentially(
+    {
+      baseUrl,
+      startYear,
+      onProgress: (year, total, current) => {
+        console.log(`Fetching champion for ${year}... (${current}/${total})`);
+      },
+      onError: (year, error) => {
+        console.error(`Error fetching champion standings for ${year}:`, error.message);
+      },
+    },
+    async (year, apiUrl) => {
+      const response = await HttpRateLimiterUtil.makeRateLimitedRequestWithAxios(apiUrl);
+      const championDto = championsMapper.mapToSeasonDto(response);
       
-      if (champion && champion.season) {
-        console.log(`Upserting champion for season ${champion.season}: ${champion.givenName} ${champion.familyName}`);
+      if (championDto && championDto.season) {
+        console.log(`Upserting champion for season ${championDto.season}: ${championDto.givenName} ${championDto.familyName} (${championDto.driverId})`);
         
-        // Store in database
-        await prisma.champion.upsert({
-          where: { season: champion.season },
-          update: {
-            givenName: champion.givenName,
-            familyName: champion.familyName,
-          },
-          create: {
-            season: champion.season,
-            givenName: champion.givenName,
-            familyName: champion.familyName,
-          },
-        });
+        // Store in database using repository
+        await championsRepository.upsertChampion(championDto);
+        return championDto;
       }
-    } catch (error) {
-      console.error(`Error fetching champion standings for ${year}:`, error.message);
-      // Continue with the next year even if one fails
-    }
-  }
+      return null;
+    },
+  );
   
-  console.log('Seed completed successfully!');
+  console.log(`Seed completed successfully! Processed ${champions.length} champions.`);
 }
 
 // Execute the seed
@@ -105,5 +61,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await prismaService.$disconnect();
   }); 
