@@ -193,6 +193,11 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
     
+    // Room Database
+    implementation "androidx.room:room-runtime:$room_version"
+    implementation "androidx.room:room-ktx:$room_version"
+    ksp "androidx.room:room-compiler:$room_version"
+    
     // Unit Tests
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
@@ -200,6 +205,7 @@ dependencies {
     testImplementation "app.cash.turbine:turbine:1.0.0"
     testImplementation "com.google.truth:truth:1.1.5"
     testImplementation "androidx.arch.core:core-testing:2.2.0"
+    testImplementation "androidx.room:room-testing:$room_version"
     
     // Android Tests
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
@@ -212,6 +218,7 @@ dependencies {
     androidTestImplementation "io.mockk:mockk-android:1.13.9"
     androidTestImplementation "app.cash.turbine:turbine:1.0.0"
     androidTestImplementation "com.google.truth:truth:1.1.5"
+    androidTestImplementation "androidx.room:room-testing:$room_version"
     
     kspAndroidTest "com.google.dagger:hilt-android-compiler:$hilt_version"
     

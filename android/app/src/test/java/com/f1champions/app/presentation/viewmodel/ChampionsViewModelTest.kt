@@ -2,10 +2,12 @@ package com.f1champions.app.presentation.viewmodel
 
 import app.cash.turbine.test
 import com.f1champions.app.domain.model.Season
+import com.f1champions.app.domain.repository.F1Repository
 import com.f1champions.app.domain.usecase.GetChampionsUseCase
 import com.f1champions.app.presentation.ui.UiState
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,12 +25,17 @@ class ChampionsViewModelTest {
     
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var getChampionsUseCase: GetChampionsUseCase
+    private lateinit var repository: F1Repository
     private lateinit var viewModel: ChampionsViewModel
     
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         getChampionsUseCase = mockk()
+        repository = mockk()
+        
+        // Default network connectivity behavior
+        every { repository.observeNetworkConnectivity() } returns flowOf(true)
     }
     
     @After
@@ -46,7 +53,7 @@ class ChampionsViewModelTest {
         coEvery { getChampionsUseCase() } returns flowOf(Result.success(seasons))
         
         // When
-        viewModel = ChampionsViewModel(getChampionsUseCase)
+        viewModel = ChampionsViewModel(getChampionsUseCase, repository)
         
         // Then
         viewModel.uiState.test {
@@ -69,7 +76,7 @@ class ChampionsViewModelTest {
         coEvery { getChampionsUseCase() } returns flowOf(Result.failure(exception))
         
         // When
-        viewModel = ChampionsViewModel(getChampionsUseCase)
+        viewModel = ChampionsViewModel(getChampionsUseCase, repository)
         
         // Then
         viewModel.uiState.test {

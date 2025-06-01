@@ -39,6 +39,7 @@ import com.f1champions.app.domain.model.Race
 import com.f1champions.app.presentation.ui.UiState
 import com.f1champions.app.presentation.ui.components.ErrorMessage
 import com.f1champions.app.presentation.ui.components.LoadingIndicator
+import com.f1champions.app.presentation.ui.components.OfflineIndicator
 import com.f1champions.app.presentation.viewmodel.RaceWinnersViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,21 +72,30 @@ fun RaceWinnersScreen(
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when (val state = uiState.raceWinners) {
-                is UiState.Loading -> LoadingIndicator()
-                is UiState.Error -> ErrorMessage(
-                    message = state.message,
-                    onRetryClick = { viewModel.fetchRaceWinners() }
-                )
-                is UiState.Success -> RaceWinnersList(
-                    races = state.data,
-                    championId = uiState.championId
-                )
+            // Show offline indicator when in offline mode
+            if (uiState.isOffline) {
+                OfflineIndicator()
+            }
+            
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when (val state = uiState.raceWinners) {
+                    is UiState.Loading -> LoadingIndicator()
+                    is UiState.Error -> ErrorMessage(
+                        message = state.message,
+                        onRetryClick = { viewModel.fetchRaceWinners() }
+                    )
+                    is UiState.Success -> RaceWinnersList(
+                        races = state.data,
+                        championId = uiState.championId
+                    )
+                }
             }
         }
     }

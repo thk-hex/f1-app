@@ -10,11 +10,13 @@ sealed class UiState<out T> {
 }
 
 data class ChampionsUiState(
-    val champions: UiState<List<Season>> = UiState.Loading
+    val champions: UiState<List<Season>> = UiState.Loading,
+    val isOffline: Boolean = false
 )
 
 data class RaceWinnersUiState(
     val season: String = "",
     val championId: String = "",
-    val raceWinners: UiState<List<Race>> = UiState.Loading
+    val raceWinners: UiState<List<Race>> = UiState.Loading,
+    val isOffline: Boolean = false
 ) 
