@@ -99,11 +99,13 @@ The application includes an automated scheduler that keeps F1 data up-to-date:
 
 - **Schedule**: Every Monday at 12:00 PM UTC
 - **Updates**: Champions data and race winners for recent years
+- **Force Refresh**: Always fetches from external API to ensure data completeness
+- **Missing Data Detection**: Detects and updates missing races or champions
 - **Cache Management**: Automatically clears cache before updates
 - **Manual Control**: Use `/scheduler/trigger-update` for manual updates
 - **Monitoring**: Check `/scheduler/status` for scheduler information
 
-The scheduler ensures that your F1 data stays current without manual intervention.
+The scheduler ensures that your F1 data stays current and complete without manual intervention, even if individual races or champions are missing from the database.
 
 ## Implementation Details
 
@@ -121,10 +123,12 @@ The Race Winners module:
 The Scheduler module:
 1. Runs automated updates every Monday at 12:00 PM UTC
 2. Clears cache before updating to ensure fresh data
-3. Updates Champions data from the configured start year to current year
-4. Updates Race Winners data for the last 3 years (configurable)
-5. Includes rate limiting and error handling for resilient operation
-6. Provides API endpoints for manual triggering and status monitoring
+3. **Force refreshes** Champions data from the configured start year to current year
+4. **Force refreshes** Race Winners data for the last 3 years (configurable)
+5. Always fetches from external API to detect missing or new data
+6. Uses upsert operations to update existing records and add missing ones
+7. Includes rate limiting and error handling for resilient operation
+8. Provides API endpoints for manual triggering and status monitoring
 
 ## Trade-offs
 1. The DB seed script fetches champion data from the API before the backend instance launches. If the requirement changes to accommodate a larger dataset, fetching from the API can be disabled. The seed script can then populate only the years without actual data, which will reduce app launch time.

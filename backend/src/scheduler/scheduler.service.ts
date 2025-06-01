@@ -83,8 +83,8 @@ export class SchedulerService {
     try {
       this.logger.log('Updating champions data...');
       
-      // This will trigger a fresh fetch from the external API and update the database
-      const champions = await this.championsService.getChampions();
+      // Force refresh to ensure we get the latest data from API and update database
+      const champions = await this.championsService.getChampions(true);
       
       this.logger.log(`Successfully updated ${champions.length} champions records`);
     } catch (error) {
@@ -114,8 +114,8 @@ export class SchedulerService {
         try {
           this.logger.log(`Updating race winners for year ${year}...`);
           
-          // This will trigger a fresh fetch from the external API and update the database
-          const raceWinners = await this.raceWinnersService.getRaceWinners(year);
+          // Force refresh to ensure we get the latest data from API and update database
+          const raceWinners = await this.raceWinnersService.getRaceWinners(year, true);
           
           totalRacesUpdated += raceWinners.length;
           this.logger.log(`Updated ${raceWinners.length} race winners for year ${year}`);

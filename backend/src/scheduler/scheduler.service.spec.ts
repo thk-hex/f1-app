@@ -82,8 +82,8 @@ describe('SchedulerService', () => {
     await service.triggerManualUpdate();
 
     expect(mockCacheService.del).toHaveBeenCalled();
-    expect(mockChampionsService.getChampions).toHaveBeenCalled();
-    expect(mockRaceWinnersService.getRaceWinners).toHaveBeenCalled();
+    expect(mockChampionsService.getChampions).toHaveBeenCalledWith(true);
+    expect(mockRaceWinnersService.getRaceWinners).toHaveBeenCalledWith(expect.any(Number), true);
   });
 
   it('should handle errors gracefully during update', async () => {
@@ -96,6 +96,6 @@ describe('SchedulerService', () => {
     
     // Verify that cache clearing was still attempted
     expect(mockCacheService.del).toHaveBeenCalled();
-    expect(mockChampionsService.getChampions).toHaveBeenCalled();
+    expect(mockChampionsService.getChampions).toHaveBeenCalledWith(true);
   });
 }); 

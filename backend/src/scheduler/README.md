@@ -9,6 +9,8 @@ The Scheduler module provides automated updates for F1 Champions and Race Winner
 - **Automated Weekly Updates**: Runs every Monday at 12:00 PM UTC
 - **Manual Trigger**: API endpoints to manually trigger updates
 - **Cache Management**: Automatically clears cache before updates
+- **Force Refresh**: Always fetches from external API to ensure data completeness
+- **Missing Data Detection**: Detects and updates missing races or champions
 - **Error Handling**: Robust error handling with detailed logging
 - **Status Monitoring**: Endpoints to check scheduler status and next run time
 
@@ -81,14 +83,18 @@ Returns information about the scheduler and its configuration.
 - Clears Race Winners cache for all years from start year to current year
 
 ### 2. Champions Update
-- Fetches fresh data from external F1 API
-- Updates database with new/changed champion data
+- **Force refresh** from external F1 API (bypasses database checks)
+- Fetches ALL championship data from configured start year to current year
+- Updates database with new/changed champion data (upserts existing records)
+- Detects and adds any missing championship data
 - Caches results in Redis
 
 ### 3. Race Winners Update
+- **Force refresh** from external F1 API for each year (bypasses database checks)
 - Updates race winners for last 3 years (configurable)
-- Fetches fresh data from external F1 API
-- Updates database with new/changed race data
+- Fetches ALL race data for each year from external F1 API
+- Updates database with new/changed race data (upserts existing records)
+- Detects and adds any missing race data (e.g., newly completed races)
 - Caches results in Redis
 - Includes rate limiting between API calls
 
