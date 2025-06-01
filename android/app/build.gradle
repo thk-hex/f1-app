@@ -29,9 +29,11 @@ android {
 
     buildTypes {
         debug {
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000\"")
             minifyEnabled false
         }
         release {
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000\"")
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -45,6 +47,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildFeatures.buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = compose_compiler_version
