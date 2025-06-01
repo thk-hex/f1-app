@@ -10,6 +10,6 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [HttpModule, PrismaModule],
   providers: [ChampionsService, ChampionsMapper, ChampionsRepository],
   controllers: [ChampionsController],
-  exports: [ChampionsMapper, ChampionsRepository],
+  exports: [ChampionsService, ChampionsMapper, ChampionsRepository],
 })
 export class ChampionsModule {}

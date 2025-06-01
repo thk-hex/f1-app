@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { RaceWinnersModule } from './race-winners/race-winners.module';
 import { RedisCacheModule } from './cache/cache.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { RedisCacheModule } from './cache/cache.module';
     ChampionsModule,
     PrismaModule,
     RaceWinnersModule,
+    SchedulerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
