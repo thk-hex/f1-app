@@ -12,6 +12,11 @@ on:
       - 'backend/**'
       - '.github/workflows/backend.yml'
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
 # Cancel outdated runs when new commits are pushed to the same PR/branch
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -173,12 +178,12 @@ jobs:
           org.opencontainers.image.description=Backend API for F1 Champions application
           org.opencontainers.image.vendor=${{ github.repository_owner }}
           
-    - name: Build Docker image
+    - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: backend
         platforms: linux/amd64,linux/arm64
-        push: true
+        push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
