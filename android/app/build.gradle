@@ -3,7 +3,18 @@ plugins {
     id 'kotlin-android'
     id 'com.google.devtools.ksp'
     id 'dagger.hilt.android.plugin'
+    id 'org.jetbrains.kotlin.plugin.compose'
     id 'jacoco'
+}
+
+// Configure Compose Compiler
+composeCompiler {
+    enableStrongSkippingMode = true
+    
+    reportsDestination = layout.buildDirectory.dir("compose_compiler")
+    metricsDestination = layout.buildDirectory.dir("compose_compiler")
+    
+    stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
 }
 
 // JaCoCo configuration
@@ -44,15 +55,19 @@ android {
     }
     kotlinOptions {
         jvmTarget = '17'
+        languageVersion = "2.1"
+        freeCompilerArgs += [
+            "-opt-in=kotlin.RequiresOptIn",
+            "-opt-in=kotlin.ExperimentalStdlibApi",
+            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+            "-Xcontext-receivers"
+        ]
     }
     buildFeatures {
         compose = true
-        buildFeatures.buildConfig = true
+        buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = compose_compiler_version
-    }
-    packagingOptions {
+    packaging {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
             excludes += '/META-INF/LICENSE.md'
