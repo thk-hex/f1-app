@@ -30,33 +30,26 @@ class F1RepositoryImpl @Inject constructor(
 
     override fun getChampions(): Flow<Result<List<Season>>> = flow {
         try {
-            // First, emit cached data if available
             val cachedSeasons = seasonDao.getAllSeasons().first()
             if (cachedSeasons.isNotEmpty()) {
                 emit(Result.success(cachedSeasons.toDomainModels()))
             }
-            
-            // Then try to fetch fresh data if network is available
+
             if (networkChecker.isNetworkAvailable()) {
                 try {
                     val apiResponse = apiService.getChampions()
                     val domainModels = apiResponse.map { it.toDomainModel() }
-                    
-                    // Update cache
+
                     seasonDao.deleteAllSeasons()
                     seasonDao.insertSeasons(domainModels.toSeasonEntities())
-                    
-                    // Emit fresh data
+
                     emit(Result.success(domainModels))
                 } catch (apiException: Exception) {
-                    // If API fails but we have cached data, we already emitted it
-                    // If no cached data, emit the error
                     if (cachedSeasons.isEmpty()) {
                         emit(Result.failure(apiException))
                     }
                 }
             } else {
-                // No network and no cached data
                 if (cachedSeasons.isEmpty()) {
                     emit(Result.failure(Exception("No internet connection and no cached data available")))
                 }
@@ -68,33 +61,26 @@ class F1RepositoryImpl @Inject constructor(
 
     override fun getRaceWinners(year: String): Flow<Result<List<Race>>> = flow {
         try {
-            // First, emit cached data if available
             val cachedRaces = raceDao.getRacesByYearSync(year)
             if (cachedRaces.isNotEmpty()) {
                 emit(Result.success(cachedRaces.toRaceDomainModels()))
             }
-            
-            // Then try to fetch fresh data if network is available
+
             if (networkChecker.isNetworkAvailable()) {
                 try {
                     val apiResponse = apiService.getRaceWinners(year)
                     val domainModels = apiResponse.map { it.toDomainModel() }
-                    
-                    // Update cache
+
                     raceDao.deleteRacesByYear(year)
                     raceDao.insertRaces(domainModels.toRaceEntities(year))
-                    
-                    // Emit fresh data
+
                     emit(Result.success(domainModels))
                 } catch (apiException: Exception) {
-                    // If API fails but we have cached data, we already emitted it
-                    // If no cached data, emit the error
                     if (cachedRaces.isEmpty()) {
                         emit(Result.failure(apiException))
                     }
                 }
             } else {
-                // No network and no cached data
                 if (cachedRaces.isEmpty()) {
                     emit(Result.failure(Exception("No internet connection and no cached data available")))
                 }

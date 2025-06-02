@@ -5,7 +5,6 @@ import com.f1champions.app.data.local.entity.SeasonEntity
 import com.f1champions.app.domain.model.Race
 import com.f1champions.app.domain.model.Season
 
-// Season mappers
 fun SeasonEntity.toDomainModel(): Season {
     return Season(
         year = year,
@@ -30,7 +29,6 @@ fun List<Season>.toSeasonEntities(): List<SeasonEntity> {
     return map { it.toEntity() }
 }
 
-// Race mappers
 fun RaceEntity.toDomainModel(): Race {
     return Race(
         round = round,

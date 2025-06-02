@@ -4,10 +4,8 @@ import { ChampionsMapper } from '../src/champions/champions.mapper';
 import { ChampionsRepository } from '../src/champions/champions.repository';
 import { PrismaService } from '../src/prisma/prisma.service';
 
-// Load environment variables
 dotenv.config();
 
-// Create instances of the services to reuse existing logic
 const prismaService = new PrismaService();
 const championsMapper = new ChampionsMapper();
 const championsRepository = new ChampionsRepository(prismaService);
@@ -18,7 +16,6 @@ async function main() {
   const baseUrl = process.env.BASE_URL;
   const startYear = process.env.GP_START_YEAR ? parseInt(process.env.GP_START_YEAR, 10) : 2005;
   
-  // Validate configuration
   F1ValidationUtil.validateBaseUrl(baseUrl);
   F1ValidationUtil.validateGpStartYear(startYear);
   
@@ -43,7 +40,6 @@ async function main() {
       if (championDto && championDto.season) {
         console.log(`Upserting champion for season ${championDto.season}: ${championDto.givenName} ${championDto.familyName} (${championDto.driverId})`);
         
-        // Store in database using repository
         await championsRepository.upsertChampion(championDto);
         return championDto;
       }
@@ -54,7 +50,6 @@ async function main() {
   console.log(`Seed completed successfully! Processed ${champions.length} champions.`);
 }
 
-// Execute the seed
 main()
   .catch((e) => {
     console.error(e);

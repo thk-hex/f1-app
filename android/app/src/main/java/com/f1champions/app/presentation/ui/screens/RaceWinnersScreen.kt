@@ -77,7 +77,6 @@ fun RaceWinnersScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Show offline indicator when in offline mode
             if (uiState.isOffline) {
                 OfflineIndicator()
             }
@@ -138,7 +137,6 @@ fun RaceWinnerItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Round number indicator
             Surface(
                 shape = CircleShape,
                 color = if (isChampion) f1Red else MaterialTheme.colorScheme.primary,
@@ -152,8 +150,7 @@ fun RaceWinnerItem(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
-            
-            // Race details
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {

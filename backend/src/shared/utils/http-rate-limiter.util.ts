@@ -10,12 +10,6 @@ export interface RateLimitedRequestOptions {
 export class HttpRateLimiterUtil {
   private static readonly DEFAULT_DELAY_MS = 250; // 4 requests per second
 
-  /**
-   * Makes a rate-limited HTTP request using NestJS HttpService
-   * @param httpService The NestJS HttpService instance
-   * @param url The URL to request
-   * @param options Rate limiting options
-   */
   static async makeRateLimitedRequest(
     httpService: HttpService,
     url: string,
@@ -30,7 +24,6 @@ export class HttpRateLimiterUtil {
       const data = response.data;
       const headers = response.headers;
 
-      // Apply rate limiting based on headers or default
       await this.applyRateLimit(headers, defaultDelayMs);
 
       return data;
@@ -43,7 +36,6 @@ export class HttpRateLimiterUtil {
         );
         await this.delay(waitTimeMs);
 
-        // Retry the request
         return this.makeRateLimitedRequest(httpService, url, options);
       }
 
@@ -51,11 +43,6 @@ export class HttpRateLimiterUtil {
     }
   }
 
-  /**
-   * Makes a rate-limited HTTP request using axios directly (for scripts)
-   * @param url The URL to request
-   * @param options Rate limiting options
-   */
   static async makeRateLimitedRequestWithAxios(
     url: string,
     options: RateLimitedRequestOptions = {},
@@ -66,7 +53,6 @@ export class HttpRateLimiterUtil {
     try {
       const response: AxiosResponse = await axios.get(url);
 
-      // Apply default rate limiting
       await this.delay(defaultDelayMs);
 
       return response.data;
@@ -79,7 +65,6 @@ export class HttpRateLimiterUtil {
         );
         await this.delay(waitTimeMs);
 
-        // Retry the request
         return this.makeRateLimitedRequestWithAxios(url, options);
       }
 

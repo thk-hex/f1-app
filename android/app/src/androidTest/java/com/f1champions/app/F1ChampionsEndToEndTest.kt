@@ -30,9 +30,7 @@ class F1ChampionsEndToEndTest {
         // Start at welcome screen
         composeRule.onNodeWithText("F1 Champions").assertIsDisplayed()
         composeRule.onNodeWithText("Explore Formula 1 champions throughout the years").assertIsDisplayed()
-        
-        // Wait for auto-navigation to champions screen
-        // In a real test, you would use a mechanism to wait for this transition
+
         composeRule.waitUntil(5000) {
             try {
                 composeRule.onNodeWithText("F1 Champions").assertExists()
@@ -41,18 +39,7 @@ class F1ChampionsEndToEndTest {
                 false
             }
         }
-        
-        // Since we can't predict which champions data will be loaded
-        // We'll just verify we navigate to the champions screen
-        // In a real test, you'd use TestModule to provide fake data
-        
-        // For now just verify the title is displayed
+
         composeRule.onNodeWithText("F1 Champions").assertIsDisplayed()
-        
-        // Note: In a complete test with predictable data, you would:
-        // 1. Click on a specific champion
-        // 2. Verify navigation to race winners screen
-        // 3. Verify race winners data is displayed
-        // 4. Test back navigation
     }
 } 

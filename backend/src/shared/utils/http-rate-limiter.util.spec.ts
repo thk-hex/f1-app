@@ -3,7 +3,6 @@ import { of, throwError } from 'rxjs';
 import axios from 'axios';
 import { HttpRateLimiterUtil } from './http-rate-limiter.util';
 
-// Mock axios
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
@@ -15,7 +14,6 @@ describe('HttpRateLimiterUtil', () => {
       get: jest.fn(),
     } as any;
 
-    // Reset all mocks
     jest.clearAllMocks();
   });
 
@@ -59,7 +57,6 @@ describe('HttpRateLimiterUtil', () => {
         },
       };
 
-      // First call fails with 429, second call succeeds
       httpService.get
         .mockReturnValueOnce(throwError(() => mockError))
         .mockReturnValueOnce(
@@ -95,7 +92,7 @@ describe('HttpRateLimiterUtil', () => {
       const mockData = { test: 'data' };
       const mockResponse = {
         data: mockData,
-        headers: {}, // No rate limiting headers
+        headers: {},
         status: 200,
         statusText: 'OK',
         config: {} as any,
@@ -115,7 +112,6 @@ describe('HttpRateLimiterUtil', () => {
         'test-url',
       );
 
-      // Should still apply default 250ms rate limiting
       expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 250);
       expect(result).toEqual(mockData);
 
@@ -203,7 +199,6 @@ describe('HttpRateLimiterUtil', () => {
         },
       };
 
-      // First call fails with 429, second call succeeds
       mockedAxios.get
         .mockRejectedValueOnce(mockError)
         .mockResolvedValueOnce({ data: mockData });

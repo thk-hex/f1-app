@@ -33,8 +33,7 @@ object TestAppModule {
     @Singleton
     fun provideF1ApiService(): F1ApiService {
         val mockApiService = mockk<F1ApiService>()
-        
-        // Mock API responses for testing
+
         coEvery { mockApiService.getChampions() } returns listOf(
             com.f1champions.app.data.model.SeasonDto(
                 season = "2023",

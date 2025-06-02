@@ -6,13 +6,10 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS
   app.enableCors();
 
-  // Add validation pipe
   app.useGlobalPipes(new ValidationPipe());
 
-  // Setup Swagger
   const config = new DocumentBuilder()
     .setTitle('F1 Champions API')
     .setDescription('API for retrieving F1 championship data')

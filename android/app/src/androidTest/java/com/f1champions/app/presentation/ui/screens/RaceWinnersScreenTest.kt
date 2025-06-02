@@ -85,8 +85,6 @@ class RaceWinnersScreenTest {
         }
         
         // Then
-        // In a real test, you would need a test tag for the loading indicator
-        // Since we don't have that, we just verify the title is displayed
         composeTestRule.onNodeWithText("Race Winners (2023)").assertIsDisplayed()
         // And ensure race winner items are not displayed
         composeTestRule.onNodeWithText("Monaco GP").assertDoesNotExist()

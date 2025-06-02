@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import { SchedulerService } from './scheduler.service';
 import { ChampionsService } from '../champions/champions.service';
 import { RaceWinnersService } from '../race-winners/race-winners.service';
@@ -92,15 +93,22 @@ describe('SchedulerService', () => {
   });
 
   it('should handle errors gracefully during update', async () => {
-    // Mock an error in champions service
+    const loggerErrorSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => {});
+    const loggerLogSpy = jest
+      .spyOn(Logger.prototype, 'log')
+      .mockImplementation(() => {});
+
     mockChampionsService.getChampions.mockRejectedValue(new Error('API Error'));
     mockCacheService.del.mockResolvedValue();
 
-    // The service should catch and log errors but not re-throw them (graceful handling)
     await expect(service.triggerManualUpdate()).resolves.toBeUndefined();
 
-    // Verify that cache clearing was still attempted
     expect(mockCacheService.del).toHaveBeenCalled();
     expect(mockChampionsService.getChampions).toHaveBeenCalledWith(true);
+
+    loggerErrorSpy.mockRestore();
+    loggerLogSpy.mockRestore();
   });
 });
