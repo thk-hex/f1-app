@@ -48,10 +48,12 @@ export class TestUtils {
 
     for (let i = 0; i < count; i++) {
       const driver = drivers[i % drivers.length];
-      seasons.push(this.createSeasonDto({
-        season: (baseYear + i).toString(),
-        ...driver,
-      }));
+      seasons.push(
+        this.createSeasonDto({
+          season: (baseYear + i).toString(),
+          ...driver,
+        }),
+      );
     }
     return seasons;
   }
@@ -77,10 +79,12 @@ export class TestUtils {
     ];
 
     for (let i = 0; i < count; i++) {
-      races.push(this.createRaceDto({
-        round: (i + 1).toString(),
-        gpName: raceNames[i % raceNames.length],
-      }));
+      races.push(
+        this.createRaceDto({
+          round: (i + 1).toString(),
+          gpName: raceNames[i % raceNames.length],
+        }),
+      );
     }
     return races;
   }
@@ -166,9 +170,15 @@ export class TestUtils {
   }
 
   static mockConsole() {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const consoleErrorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    const consoleLogSpy = jest
+      .spyOn(console, 'log')
+      .mockImplementation(() => {});
+    const consoleWarnSpy = jest
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {});
 
     return {
       error: consoleErrorSpy,

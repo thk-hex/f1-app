@@ -55,9 +55,9 @@ describe('ChampionsController', () => {
         expect(result).toEqual(expectedChampions);
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(2);
-        
+
         // Validate structure of returned data
-        result.forEach(season => TestUtils.expectValidSeasonDto(season));
+        result.forEach((season) => TestUtils.expectValidSeasonDto(season));
       });
     });
 
@@ -81,12 +81,14 @@ describe('ChampionsController', () => {
     describe('when service returns single champion', () => {
       it('should return array with one champion', async () => {
         // Given
-        const singleChampion = [TestUtils.createSeasonDto({
-          season: '2023',
-          givenName: 'Max',
-          familyName: 'Verstappen',
-          driverId: 'verstappen',
-        })];
+        const singleChampion = [
+          TestUtils.createSeasonDto({
+            season: '2023',
+            givenName: 'Max',
+            familyName: 'Verstappen',
+            driverId: 'verstappen',
+          }),
+        ];
         mockChampionsService.getChampions.mockResolvedValue(singleChampion);
 
         // When
@@ -110,7 +112,9 @@ describe('ChampionsController', () => {
         mockChampionsService.getChampions.mockRejectedValue(serviceError);
 
         // When/Then
-        await expect(controller.getChampions()).rejects.toThrow('Service unavailable');
+        await expect(controller.getChampions()).rejects.toThrow(
+          'Service unavailable',
+        );
         expect(service.getChampions).toHaveBeenCalledTimes(1);
       });
     });
@@ -118,11 +122,15 @@ describe('ChampionsController', () => {
     describe('when service throws custom business error', () => {
       it('should propagate the business error with original message', async () => {
         // Given
-        const businessError = new Error('Invalid configuration: GP_START_YEAR must be valid');
+        const businessError = new Error(
+          'Invalid configuration: GP_START_YEAR must be valid',
+        );
         mockChampionsService.getChampions.mockRejectedValue(businessError);
 
         // When/Then
-        await expect(controller.getChampions()).rejects.toThrow('Invalid configuration: GP_START_YEAR must be valid');
+        await expect(controller.getChampions()).rejects.toThrow(
+          'Invalid configuration: GP_START_YEAR must be valid',
+        );
         expect(service.getChampions).toHaveBeenCalledTimes(1);
       });
     });
@@ -134,7 +142,9 @@ describe('ChampionsController', () => {
         mockChampionsService.getChampions.mockRejectedValue(networkError);
 
         // When/Then
-        await expect(controller.getChampions()).rejects.toThrow('Network timeout');
+        await expect(controller.getChampions()).rejects.toThrow(
+          'Network timeout',
+        );
         expect(service.getChampions).toHaveBeenCalledTimes(1);
       });
     });

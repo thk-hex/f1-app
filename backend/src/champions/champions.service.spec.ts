@@ -7,7 +7,7 @@ import { ChampionsRepository } from './champions.repository';
 import { SeasonDto } from './dto/season.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException } from '@nestjs/common';
-import { TestUtils } from '../shared/utils';
+import { TestUtils } from '../shared/utils/test-utils';
 import { CacheService } from '../cache/cache.service';
 
 describe('ChampionsService', () => {
@@ -101,7 +101,7 @@ describe('ChampionsService', () => {
           expect(repository.findAllChampions).not.toHaveBeenCalled();
           expect(httpService.get).not.toHaveBeenCalled();
           expect(result).toEqual(cachedChampions);
-          result.forEach(season => TestUtils.expectValidSeasonDto(season));
+          result.forEach((season) => TestUtils.expectValidSeasonDto(season));
         });
       });
 
@@ -111,7 +111,9 @@ describe('ChampionsService', () => {
           const dbChampions = TestUtils.createMultipleSeasons(2, 2005);
           (cacheService.get as jest.Mock).mockResolvedValue(null);
           (repository.hasChampionsData as jest.Mock).mockResolvedValue(true);
-          (repository.findAllChampions as jest.Mock).mockResolvedValue(dbChampions);
+          (repository.findAllChampions as jest.Mock).mockResolvedValue(
+            dbChampions,
+          );
 
           // When
           const result = await service.getChampions();
@@ -120,7 +122,11 @@ describe('ChampionsService', () => {
           expect(cacheService.get).toHaveBeenCalledWith('champions');
           expect(repository.hasChampionsData).toHaveBeenCalledTimes(1);
           expect(repository.findAllChampions).toHaveBeenCalledTimes(1);
-          expect(cacheService.set).toHaveBeenCalledWith('champions', dbChampions, 3600000);
+          expect(cacheService.set).toHaveBeenCalledWith(
+            'champions',
+            dbChampions,
+            3600000,
+          );
           expect(httpService.get).not.toHaveBeenCalled();
           expect(result).toEqual(dbChampions);
         });
@@ -129,15 +135,19 @@ describe('ChampionsService', () => {
       describe('when cached champions have missing driverId', () => {
         it('should handle champions with empty driverId gracefully', async () => {
           // Given
-          const championsWithEmptyDriverId = [TestUtils.createSeasonDto({
-            season: '2005',
-            givenName: 'Fernando',
-            familyName: 'Alonso',
-            driverId: '',
-          })];
+          const championsWithEmptyDriverId = [
+            TestUtils.createSeasonDto({
+              season: '2005',
+              givenName: 'Fernando',
+              familyName: 'Alonso',
+              driverId: '',
+            }),
+          ];
           (cacheService.get as jest.Mock).mockResolvedValue(null);
           (repository.hasChampionsData as jest.Mock).mockResolvedValue(true);
-          (repository.findAllChampions as jest.Mock).mockResolvedValue(championsWithEmptyDriverId);
+          (repository.findAllChampions as jest.Mock).mockResolvedValue(
+            championsWithEmptyDriverId,
+          );
 
           // When
           const result = await service.getChampions();
@@ -167,18 +177,21 @@ describe('ChampionsService', () => {
             return undefined;
           });
 
-          const mockApiData2005 = { MRData: { StandingsTable: { season: '2005' } } };
-          const mockApiData2006 = { MRData: { StandingsTable: { season: '2006' } } };
-          
+          const mockApiData2005 = {
+            MRData: { StandingsTable: { season: '2005' } },
+          };
+          const mockApiData2006 = {
+            MRData: { StandingsTable: { season: '2006' } },
+          };
+
           const expectedSeasons = TestUtils.createMultipleSeasons(2, 2005);
 
-          const makeRateLimitedRequestSpy = TestUtils.mockHttpRateLimiterRequest(
-            (httpService, url: string) => {
+          const makeRateLimitedRequestSpy =
+            TestUtils.mockHttpRateLimiterRequest((httpService, url: string) => {
               if (url.includes('2005')) return Promise.resolve(mockApiData2005);
               if (url.includes('2006')) return Promise.resolve(mockApiData2006);
               return Promise.resolve({});
-            },
-          );
+            });
 
           (mapper.mapToSeasonDto as jest.Mock).mockImplementation((data) => {
             if (data === mockApiData2005) return expectedSeasons[0];
@@ -189,8 +202,8 @@ describe('ChampionsService', () => {
           (repository.upsertChampion as jest.Mock).mockResolvedValue({});
           // Mock findAllChampions to return data in descending order
           (repository.findAllChampions as jest.Mock).mockResolvedValue([
-            expectedSeasons[1], 
-            expectedSeasons[0], 
+            expectedSeasons[1],
+            expectedSeasons[0],
           ]);
 
           // When
@@ -207,7 +220,7 @@ describe('ChampionsService', () => {
             `${baseUrl}/2006/driverstandings/1.json`,
           );
 
-          expectedSeasons.forEach(season => {
+          expectedSeasons.forEach((season) => {
             expect(repository.upsertChampion).toHaveBeenCalledWith({
               season: season.season,
               givenName: season.givenName,
@@ -217,7 +230,7 @@ describe('ChampionsService', () => {
           });
 
           expect(result).toHaveLength(2);
-          result.forEach(season => TestUtils.expectValidSeasonDto(season));
+          result.forEach((season) => TestUtils.expectValidSeasonDto(season));
         });
       });
 
@@ -231,7 +244,9 @@ describe('ChampionsService', () => {
             return undefined;
           });
 
-          const mockApiData2006 = { MRData: { StandingsTable: { season: '2006' } } };
+          const mockApiData2006 = {
+            MRData: { StandingsTable: { season: '2006' } },
+          };
           const expectedSeason2006 = TestUtils.createSeasonDto({
             season: '2006',
             givenName: 'Michael',
@@ -249,10 +264,14 @@ describe('ChampionsService', () => {
             return Promise.resolve({});
           });
 
-          (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(expectedSeason2006);
+          (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(
+            expectedSeason2006,
+          );
           (repository.upsertChampion as jest.Mock).mockResolvedValue({});
           // Mock findAllChampions to return the successfully processed season
-          (repository.findAllChampions as jest.Mock).mockResolvedValue([expectedSeason2006]);
+          (repository.findAllChampions as jest.Mock).mockResolvedValue([
+            expectedSeason2006,
+          ]);
 
           // When
           const result = await service.getChampions();
@@ -315,7 +334,7 @@ describe('ChampionsService', () => {
           // When/Then
           await TestUtils.expectAsyncToThrow(
             () => service.getChampions(),
-            'BASE_URL not configured in .env file'
+            'BASE_URL not configured in .env file',
           );
         });
       });
@@ -331,7 +350,9 @@ describe('ChampionsService', () => {
           });
 
           // When/Then
-          await expect(service.getChampions()).rejects.toThrow(BadRequestException);
+          await expect(service.getChampions()).rejects.toThrow(
+            BadRequestException,
+          );
           await expect(service.getChampions()).rejects.toThrow(
             'GP_START_YEAR must be 1950 or later. Formula 1 World Championship started in 1950.',
           );
@@ -349,7 +370,9 @@ describe('ChampionsService', () => {
           });
 
           // When/Then
-          await expect(service.getChampions()).rejects.toThrow(BadRequestException);
+          await expect(service.getChampions()).rejects.toThrow(
+            BadRequestException,
+          );
           await expect(service.getChampions()).rejects.toThrow(
             'GP_START_YEAR cannot be greater than the current year (2006).',
           );
@@ -366,7 +389,9 @@ describe('ChampionsService', () => {
             return undefined;
           });
 
-          const mockApiData = { MRData: { StandingsTable: { season: '1950' } } };
+          const mockApiData = {
+            MRData: { StandingsTable: { season: '1950' } },
+          };
           const expectedSeason = TestUtils.createSeasonDto({
             season: '1950',
             givenName: 'Giuseppe',
@@ -377,7 +402,9 @@ describe('ChampionsService', () => {
           TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockApiData);
           (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(expectedSeason);
           (repository.upsertChampion as jest.Mock).mockResolvedValue({});
-          (repository.findAllChampions as jest.Mock).mockResolvedValue([expectedSeason]);
+          (repository.findAllChampions as jest.Mock).mockResolvedValue([
+            expectedSeason,
+          ]);
 
           // When
           const result = await service.getChampions();
@@ -403,7 +430,9 @@ describe('ChampionsService', () => {
             return undefined;
           });
 
-          const mockApiData = { MRData: { StandingsTable: { season: '2006' } } };
+          const mockApiData = {
+            MRData: { StandingsTable: { season: '2006' } },
+          };
           const expectedSeason = TestUtils.createSeasonDto({
             season: '2006',
             givenName: 'Michael',
@@ -414,7 +443,9 @@ describe('ChampionsService', () => {
           TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockApiData);
           (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(expectedSeason);
           (repository.upsertChampion as jest.Mock).mockResolvedValue({});
-          (repository.findAllChampions as jest.Mock).mockResolvedValue([expectedSeason]);
+          (repository.findAllChampions as jest.Mock).mockResolvedValue([
+            expectedSeason,
+          ]);
 
           // When
           const result = await service.getChampions();
