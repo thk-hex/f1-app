@@ -24,7 +24,9 @@ describe('SchedulerService', () => {
 
     mockCacheService = {
       getChampionsKey: jest.fn().mockReturnValue('champions'),
-      getRaceWinnersKey: jest.fn().mockImplementation((year) => `race_winners:${year}`),
+      getRaceWinnersKey: jest
+        .fn()
+        .mockImplementation((year) => `race_winners:${year}`),
       del: jest.fn(),
     } as any;
 
@@ -83,7 +85,10 @@ describe('SchedulerService', () => {
 
     expect(mockCacheService.del).toHaveBeenCalled();
     expect(mockChampionsService.getChampions).toHaveBeenCalledWith(true);
-    expect(mockRaceWinnersService.getRaceWinners).toHaveBeenCalledWith(expect.any(Number), true);
+    expect(mockRaceWinnersService.getRaceWinners).toHaveBeenCalledWith(
+      expect.any(Number),
+      true,
+    );
   });
 
   it('should handle errors gracefully during update', async () => {
@@ -93,9 +98,9 @@ describe('SchedulerService', () => {
 
     // The service should catch and log errors but not re-throw them (graceful handling)
     await expect(service.triggerManualUpdate()).resolves.toBeUndefined();
-    
+
     // Verify that cache clearing was still attempted
     expect(mockCacheService.del).toHaveBeenCalled();
     expect(mockChampionsService.getChampions).toHaveBeenCalledWith(true);
   });
-}); 
+});

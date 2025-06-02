@@ -6,13 +6,9 @@ import { ChampionsModule } from '../champions/champions.module';
 import { RaceWinnersModule } from '../race-winners/race-winners.module';
 
 @Module({
-  imports: [
-    ScheduleModule.forRoot(),
-    ChampionsModule,
-    RaceWinnersModule,
-  ],
+  imports: [ScheduleModule.forRoot(), ChampionsModule, RaceWinnersModule],
   providers: [SchedulerService],
   controllers: [SchedulerController],
   exports: [SchedulerService],
 })
-export class SchedulerModule {} 
+export class SchedulerModule {}

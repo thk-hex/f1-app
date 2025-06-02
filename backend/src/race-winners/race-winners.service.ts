@@ -17,15 +17,21 @@ export class RaceWinnersService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async getRaceWinners(year: number, forceRefresh: boolean = false): Promise<RaceDto[]> {
+  async getRaceWinners(
+    year: number,
+    forceRefresh: boolean = false,
+  ): Promise<RaceDto[]> {
     const cacheKey = this.cacheService.getRaceWinnersKey(year);
 
     // When forceRefresh is true, skip cache and database checks
     if (!forceRefresh) {
       // First check Redis cache
-      const cachedRaceWinners = await this.cacheService.get<RaceDto[]>(cacheKey);
+      const cachedRaceWinners =
+        await this.cacheService.get<RaceDto[]>(cacheKey);
       if (cachedRaceWinners) {
-        console.log(`✅ CACHE HIT: Returning race winners for ${year} from Redis cache`);
+        console.log(
+          `✅ CACHE HIT: Returning race winners for ${year} from Redis cache`,
+        );
         return cachedRaceWinners;
       }
 
@@ -55,18 +61,22 @@ export class RaceWinnersService {
         }));
 
         // Cache the database result in Redis for faster future access
-        await this.cacheService.set(cacheKey, raceResults, CacheTTL.RACE_WINNERS);
+        await this.cacheService.set(
+          cacheKey,
+          raceResults,
+          CacheTTL.RACE_WINNERS,
+        );
 
         return raceResults;
       }
     }
 
     // Fetch from API and store in database (either no data exists or forceRefresh is true)
-    const logMessage = forceRefresh 
+    const logMessage = forceRefresh
       ? `Force refresh: Fetching race winners for ${year} from external API and updating database`
       : `Fetching race winners for ${year} from external API`;
     console.log(logMessage);
-    
+
     const baseUrl = this.configService.get<string>('BASE_URL');
     F1ValidationUtil.validateBaseUrl(baseUrl);
 

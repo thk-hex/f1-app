@@ -10,7 +10,8 @@ export class SchedulerController {
   @Post('trigger-update')
   @ApiOperation({
     summary: 'Manually trigger F1 data update',
-    description: 'Triggers the same data update process that runs automatically every Monday at 12 PM UTC',
+    description:
+      'Triggers the same data update process that runs automatically every Monday at 12 PM UTC',
   })
   @ApiResponse({
     status: 200,
@@ -42,7 +43,8 @@ export class SchedulerController {
   @Get('next-run')
   @ApiOperation({
     summary: 'Get next scheduled run time',
-    description: 'Returns the date and time of the next automated F1 data update',
+    description:
+      'Returns the date and time of the next automated F1 data update',
   })
   @ApiResponse({
     status: 200,
@@ -59,7 +61,7 @@ export class SchedulerController {
   })
   async getNextRun() {
     const nextRun = this.schedulerService.getNextScheduledRun();
-    
+
     return {
       nextRun: nextRun.toISOString(),
       cronExpression: '0 12 * * 1',
@@ -71,7 +73,8 @@ export class SchedulerController {
   @Get('status')
   @ApiOperation({
     summary: 'Get scheduler status',
-    description: 'Returns information about the scheduler and its configuration',
+    description:
+      'Returns information about the scheduler and its configuration',
   })
   @ApiResponse({
     status: 200,
@@ -89,7 +92,7 @@ export class SchedulerController {
   })
   async getStatus() {
     const nextRun = this.schedulerService.getNextScheduledRun();
-    
+
     return {
       enabled: true,
       nextRun: nextRun.toISOString(),
@@ -99,4 +102,4 @@ export class SchedulerController {
       lastRunStatus: 'Check application logs for detailed run history',
     };
   }
-} 
+}

@@ -27,7 +27,8 @@ export class ChampionsService {
     // When forceRefresh is true, skip cache and database checks
     if (!forceRefresh) {
       // First check Redis cache
-      const cachedChampions = await this.cacheService.get<SeasonDto[]>(cacheKey);
+      const cachedChampions =
+        await this.cacheService.get<SeasonDto[]>(cacheKey);
       if (cachedChampions) {
         console.log('✅ CACHE HIT: Returning champions data from Redis cache');
         return cachedChampions;
@@ -36,7 +37,9 @@ export class ChampionsService {
       // Then check if we already have data in the database
       const hasData = await this.championsRepository.hasChampionsData();
       if (hasData) {
-        console.log('Loading champions data from database and caching in Redis');
+        console.log(
+          'Loading champions data from database and caching in Redis',
+        );
         const dbChampions = await this.championsRepository.findAllChampions();
 
         // Cache the database result in Redis for faster future access
@@ -47,11 +50,11 @@ export class ChampionsService {
     }
 
     // Fetch from API and store in database (either no data exists or forceRefresh is true)
-    const logMessage = forceRefresh 
+    const logMessage = forceRefresh
       ? 'Force refresh: Fetching champions data from external API and updating database'
       : 'Fetching champions data from external API';
     console.log(logMessage);
-    
+
     const baseUrl = this.configService.get<string>('BASE_URL');
     const startYear = this.configService.get<number>('GP_START_YEAR');
 
