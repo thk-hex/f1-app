@@ -8,8 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma
 
-# Now npm install can run prisma generate successfully
-RUN npm ci --only=production && npm cache clean --force
+
+RUN npm ci && npm cache clean
 
 # Copy source code
 COPY . .
@@ -29,9 +29,13 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nestjs -u 1001
 
-# Copy built application from builder stage
+# Copy package files for production install
 COPY --from=builder --chown=nestjs:nodejs /app/package*.json ./
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+
+# Install only production dependencies
+RUN npm ci --only=production && npm cache clean
+
+# Copy built application and prisma from builder stage
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 
