@@ -5,7 +5,9 @@
 [![Android](https://img.shields.io/badge/Android-Kotlin-A4C639?style=flat&logo=android)](./android/README.md)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker)](./infrastructure/docker-compose.yml)
 
-A comprehensive full-stack application for exploring Formula 1 Champions and race winners data. This project demonstrates modern development practices with a NestJS backend, native Android app, and containerized infrastructure.
+A comprehensive full-stack application for exploring Formula 1 Champions and race winners data. This project demonstrates modern development practices with a NestJS backend, native Android app, and containerized infrastructure. 
+
+In detail README files can be found for [Backend API](./backend/README.md) and [Android Application](./android/README.md).
 
 ## 🏎️ Project Overview
 
