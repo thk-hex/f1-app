@@ -8,8 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma
 
-
-RUN npm ci && npm cache clean
+# Install ALL dependencies (including dev) for building
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -33,7 +33,7 @@ RUN adduser -S nestjs -u 1001
 COPY --from=builder --chown=nestjs:nodejs /app/package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production && npm cache clean
+RUN npm ci --only=production
 
 # Copy built application and prisma from builder stage
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
