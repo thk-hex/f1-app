@@ -206,7 +206,7 @@ describe('ChampionsService', () => {
     it('should fetch from API and store in database if no cached champions exist', async () => {
       (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
-      const baseUrl = 'example.com';
+      const baseUrl = 'https://example.com';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
         if (key === 'GP_START_YEAR') return 2005;
@@ -288,7 +288,7 @@ describe('ChampionsService', () => {
     it('should continue processing years even if one request fails', async () => {
       (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
-      const baseUrl = 'example.com';
+      const baseUrl = 'https://example.com';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
         if (key === 'GP_START_YEAR') return 2005;
@@ -335,7 +335,7 @@ describe('ChampionsService', () => {
     it('should handle empty season data from mapper', async () => {
       (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
-      const baseUrl = 'example.com';
+      const baseUrl = 'https://example.com';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
         if (key === 'GP_START_YEAR') return 2005;
@@ -357,7 +357,7 @@ describe('ChampionsService', () => {
     it('should throw BadRequestException if GP_START_YEAR is before 1950', async () => {
       (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
-      const baseUrl = 'example.com';
+      const baseUrl = 'https://example.com';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
         if (key === 'GP_START_YEAR') return 1949;
@@ -373,7 +373,7 @@ describe('ChampionsService', () => {
     it('should throw BadRequestException if GP_START_YEAR is after current year', async () => {
       (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
-      const baseUrl = 'example.com';
+      const baseUrl = 'https://example.com';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
         if (key === 'GP_START_YEAR') return 2007;
@@ -389,7 +389,7 @@ describe('ChampionsService', () => {
     it('should accept GP_START_YEAR of 1950 (minimum valid year)', async () => {
       (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
-      const baseUrl = 'example.com';
+      const baseUrl = 'https://example.com';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
         if (key === 'GP_START_YEAR') return 1950;
@@ -416,7 +416,7 @@ describe('ChampionsService', () => {
     it('should accept GP_START_YEAR equal to current year', async () => {
       (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
 
-      const baseUrl = 'example.com';
+      const baseUrl = 'https://example.com';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
         if (key === 'GP_START_YEAR') return 2006;

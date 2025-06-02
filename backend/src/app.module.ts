@@ -1,24 +1,29 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { HttpModule } from '@nestjs/axios';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ChampionsModule } from './champions/champions.module';
-import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from './prisma/prisma.module';
 import { RaceWinnersModule } from './race-winners/race-winners.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { RedisCacheModule } from './cache/cache.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { SecurityModule } from './security/security.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: '.env',
       isGlobal: true,
     }),
+    HttpModule,
+    ScheduleModule.forRoot(),
+    PrismaModule,
     RedisCacheModule,
     ChampionsModule,
-    PrismaModule,
     RaceWinnersModule,
     SchedulerModule,
+    SecurityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -285,7 +285,7 @@ describe('RaceWinnersService', () => {
 
       (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue([]);
 
-      const baseUrl = 'example.com';
+      const baseUrl = 'https://example.com';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
         return undefined;
