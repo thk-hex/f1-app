@@ -56,8 +56,9 @@ services:
   # pgAdmin for Production Database Administration
   - type: web
     name: f1-app-pgadmin-prod
-    env: docker
-    dockerCommand: dpage/pgadmin4:latest
+    env: image
+    image:
+      url: dpage/pgadmin4:latest
     plan: free
     region: oregon
     healthCheckPath: /misc/ping
@@ -76,8 +77,9 @@ services:
   # pgAdmin for Development Database Administration
   - type: web
     name: f1-app-pgadmin-dev
-    env: docker
-    dockerCommand: dpage/pgadmin4:latest
+    env: image
+    image:
+      url: dpage/pgadmin4:latest
     plan: free
     region: oregon
     healthCheckPath: /misc/ping
