@@ -16,7 +16,8 @@ export class ChampionsController {
   })
   @ApiResponse({
     status: 200,
-    description: 'List of all F1 champions by season in descending order (most recent first)',
+    description:
+      'List of all F1 champions by season in descending order (most recent first)',
     type: [SeasonDto],
   })
   @ApiResponse({
