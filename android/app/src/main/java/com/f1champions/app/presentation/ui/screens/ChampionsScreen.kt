@@ -50,7 +50,6 @@ fun ChampionsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Show offline indicator when in offline mode
             if (uiState.isOffline) {
                 OfflineIndicator()
             }

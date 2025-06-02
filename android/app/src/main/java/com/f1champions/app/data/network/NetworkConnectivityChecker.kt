@@ -48,8 +48,7 @@ class NetworkConnectivityChecker @Inject constructor(
         }
         
         connectivityManager.registerNetworkCallback(networkRequest, callback)
-        
-        // Send initial state
+
         trySend(isNetworkAvailable())
         
         awaitClose {

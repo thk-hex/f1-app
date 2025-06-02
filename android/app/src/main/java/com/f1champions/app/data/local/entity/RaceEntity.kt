@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 data class RaceEntity(
     @PrimaryKey
     @ColumnInfo(name = "id")
-    val id: String, // Combination of year and round for uniqueness
+    val id: String,
     
     @ColumnInfo(name = "year")
     val year: String,
