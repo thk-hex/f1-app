@@ -21,6 +21,10 @@ services:
         fromDatabase:
           name: f1-app-db-prod
           property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: f1-app-redis-prod
+          property: connectionString
 
   # Development Backend Service  
   - type: web
@@ -44,6 +48,32 @@ services:
         fromDatabase:
           name: f1-app-db-dev
           property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: f1-app-redis-dev
+          property: connectionString
+
+  # pgAdmin for Database Administration
+  - type: web
+    name: f1-app-pgadmin
+    env: docker
+    dockerCommand: dpage/pgadmin4:latest
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: ""
+    healthCheckPath: /misc/ping
+    envVars:
+      - key: PGADMIN_DEFAULT_EMAIL
+        value: admin@f1app.local
+      - key: PGADMIN_DEFAULT_PASSWORD
+        value: supersecurepassword123
+      - key: PGADMIN_CONFIG_SERVER_MODE
+        value: "True"
+      - key: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED
+        value: "False"
+      - key: PGADMIN_LISTEN_PORT
+        value: "80"
 
 databases:
   # Production Database
@@ -57,5 +87,15 @@ databases:
   - name: f1-app-db-dev
     databaseName: f1_champions_dev
     user: f1_user_dev
+    plan: free
+    region: oregon
+
+  # Production Redis
+  - name: f1-app-redis-prod
+    plan: free
+    region: oregon
+
+  # Development Redis
+  - name: f1-app-redis-dev
     plan: free
     region: oregon 
