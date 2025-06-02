@@ -1,8 +1,34 @@
 # F1 Champions Backend
 
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+
 ## Description
 
-This is the backend service for the F1 Champions application. It provides data about Formula 1 champions across different seasons.
+This is the backend service for the F1 Champions application. It provides data about Formula 1 champions across different seasons using modern Node.js technologies.
+
+## 🏗️ Architecture & Approach
+
+### Key Architectural Decisions
+
+#### 1. **NestJS Framework**
+- **Modular Architecture**: Each domain has its own module with clear boundaries
+- **Dependency Injection**: Built-in IoC container for loose coupling
+- **Decorator-based**: Metadata-driven development with TypeScript decorators
+
+#### 2. **Database Strategy**
+- **PostgreSQL**: Robust relational database for structured F1 data
+- **Prisma ORM**: Type-safe database client with automatic migrations
+- **Schema-first Approach**: Database schema drives TypeScript types
+
+#### 3. **Caching Strategy**
+- **Redis**: High-performance in-memory caching
+- **Multi-level Caching**: API-level and database query-level caching
+- **Cache Invalidation**: Smart cache clearing on data updates
+- **TTL Management**: Time-based cache expiration
 
 ## Environment Variables
 
@@ -13,6 +39,9 @@ The application requires the following environment variables:
   - **Valid range**: 1950 (when F1 World Championship started) to current year
   - **Validation**: The application will return a 400 Bad Request error if GP_START_YEAR is outside this range
 - `DATABASE_URL`: PostgreSQL connection string
+- `PORT`: API's port
+- `REDIS_HOST`: Redis host
+- `REDIS_PORT`: Redis port
 
 ## Database Setup
 
@@ -25,10 +54,7 @@ $ npm run prisma:generate
 # Run migrations
 $ npm run prisma:migrate
 
-# Open Prisma Studio
-$ npm run prisma:studio
-
-# Seed the database
+# Seed the database (optional)
 $ npm run db:seed
 ```
 
@@ -63,17 +89,16 @@ $ npm run test:cov
 
 ## API Endpoints
 
+### Core Endpoints
 - `GET /champions`: Get a list of all F1 champions
 - `GET /race-winners/:year`: Get a list of all race winners for a specific year
 
 ### Scheduler Endpoints
-
 - `POST /scheduler/trigger-update`: Manually trigger F1 data update
 - `GET /scheduler/next-run`: Get next scheduled update time
 - `GET /scheduler/status`: Get scheduler status and configuration
 
 ### Cache Management
-
 - `GET /cache/health`: Check cache health status
 - `GET /cache/stats`: Get cache statistics
 - `DELETE /cache/champions`: Clear champions cache
@@ -95,37 +120,28 @@ You can use the OpenAPI YAML/JSON to generate client code for your frontend appl
 The application includes an automated scheduler that keeps F1 data up-to-date:
 
 - **Schedule**: Every Monday at 12:00 PM UTC
-- **Updates**: Champions data and race winners for recent years
-- **Force Refresh**: Always fetches from external API to ensure data completeness
-- **Missing Data Detection**: Detects and updates missing races or champions
-- **Cache Management**: Automatically clears cache before updates
-- **Manual Control**: Use `/scheduler/trigger-update` for manual updates
-- **Monitoring**: Check `/scheduler/status` for scheduler information
+- **Updates**: Champions data and race winners for last year
 
-The scheduler ensures that your F1 data stays current and complete without manual intervention, even if individual races or champions are missing from the database.
+The scheduler ensures that your F1 data stays current and complete without manual intervention, even if individual races (last year) or champions are missing from the database.
 
-## Implementation Details
+## 🐳 Docker Support
 
-The Champions module:
-1. On first request, it checks if data exists in the database
-2. If no data is found, it fetches from the external API with rate limiting
-3. The fetched data is stored in the database for future requests
-4. Subsequent requests are served directly from the database
+### Development
+```bash
+# Build and run with Docker Compose
+cd ../infrastructure
+docker-compose up --build
+```
 
-The Race Winners module:
-1. Data is stored per season in the database
-2. The API endpoint accepts a year parameter to fetch race winners for that season
-3. Rate limiting is applied to external API requests to avoid hitting rate limits
+### Production
+```bash
+# Build production image
+docker build -t f1-backend .
 
-The Scheduler module:
-1. Runs automated updates every Monday at 12:00 PM UTC
-2. Clears cache before updating to ensure fresh data
-3. **Force refreshes** Champions data from the configured start year to current year
-4. **Force refreshes** Race Winners data for the last 3 years (configurable)
-5. Always fetches from external API to detect missing or new data
-6. Uses upsert operations to update existing records and add missing ones
-7. Includes rate limiting and error handling for resilient operation
-8. Provides API endpoints for manual triggering and status monitoring
+# Run container
+docker run -p 3000:3000 --env-file .env f1-backend
+```
 
 ## Trade-offs
-1. The DB seed script fetches champion data from the API before the backend instance launches. If the requirement changes to accommodate a larger dataset, fetching from the API can be disabled. The seed script can then populate only the years without actual data, which will reduce app launch time.
+
+1. **Database Seeding**: The DB seed script fetches champion data from the API before the backend instance launches. If the requirement changes to accommodate a larger dataset, fetching from the API can be disabled. The seed script can then populate only the years without actual data, which will reduce app launch time.
