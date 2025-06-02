@@ -4,13 +4,12 @@ FROM node:lts-alpine as builder
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files AND prisma schema first
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
-
-# Copy prisma schema
 COPY prisma ./prisma
-RUN npx prisma generate
+
+# Now npm install can run prisma generate successfully
+RUN npm ci --only=production && npm cache clean --force
 
 # Copy source code
 COPY . .
