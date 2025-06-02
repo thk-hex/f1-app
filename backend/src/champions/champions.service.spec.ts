@@ -187,6 +187,11 @@ describe('ChampionsService', () => {
           });
 
           (repository.upsertChampion as jest.Mock).mockResolvedValue({});
+          // Mock findAllChampions to return data in descending order
+          (repository.findAllChampions as jest.Mock).mockResolvedValue([
+            expectedSeasons[1], 
+            expectedSeasons[0], 
+          ]);
 
           // When
           const result = await service.getChampions();
@@ -246,6 +251,8 @@ describe('ChampionsService', () => {
 
           (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(expectedSeason2006);
           (repository.upsertChampion as jest.Mock).mockResolvedValue({});
+          // Mock findAllChampions to return the successfully processed season
+          (repository.findAllChampions as jest.Mock).mockResolvedValue([expectedSeason2006]);
 
           // When
           const result = await service.getChampions();
@@ -370,6 +377,7 @@ describe('ChampionsService', () => {
           TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockApiData);
           (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(expectedSeason);
           (repository.upsertChampion as jest.Mock).mockResolvedValue({});
+          (repository.findAllChampions as jest.Mock).mockResolvedValue([expectedSeason]);
 
           // When
           const result = await service.getChampions();
@@ -406,6 +414,7 @@ describe('ChampionsService', () => {
           TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockApiData);
           (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(expectedSeason);
           (repository.upsertChampion as jest.Mock).mockResolvedValue({});
+          (repository.findAllChampions as jest.Mock).mockResolvedValue([expectedSeason]);
 
           // When
           const result = await service.getChampions();
