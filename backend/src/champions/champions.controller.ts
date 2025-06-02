@@ -12,11 +12,11 @@ export class ChampionsController {
   @ApiOperation({
     summary: 'Get all F1 champions',
     description:
-      'Retrieves all Formula 1 World Champions from the configured start year (GP_START_YEAR) to the current year. The GP_START_YEAR must be between 1950 (when F1 started) and the current year.',
+      'Retrieves all Formula 1 World Champions from the current year to the configured start year (GP_START_YEAR) in descending order. The GP_START_YEAR must be between 1950 (when F1 started) and the current year.',
   })
   @ApiResponse({
     status: 200,
-    description: 'List of all F1 champions by season',
+    description: 'List of all F1 champions by season in descending order (most recent first)',
     type: [SeasonDto],
   })
   @ApiResponse({

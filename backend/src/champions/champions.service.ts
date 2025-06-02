@@ -82,7 +82,9 @@ export class ChampionsService {
     );
 
     if (seasons.length > 0) {
-      await this.cacheService.set(cacheKey, seasons, CacheTTL.CHAMPIONS);
+      const orderedChampions = await this.championsRepository.findAllChampions();
+      await this.cacheService.set(cacheKey, orderedChampions, CacheTTL.CHAMPIONS);
+      return orderedChampions;
     }
 
     return seasons;
