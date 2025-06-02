@@ -53,48 +53,6 @@ services:
           name: f1-app-redis-dev
           property: connectionString
 
-  # pgAdmin for Production Database Administration
-  - type: web
-    name: f1-app-pgadmin-prod
-    env: image
-    image:
-      url: dpage/pgadmin4:latest
-    plan: free
-    region: oregon
-    healthCheckPath: /misc/ping
-    envVars:
-      - key: PGADMIN_DEFAULT_EMAIL
-        value: admin-prod@f1app.local
-      - key: PGADMIN_DEFAULT_PASSWORD
-        value: prodSecurePassword123!
-      - key: PGADMIN_CONFIG_SERVER_MODE
-        value: "True"
-      - key: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED
-        value: "False"
-      - key: PGADMIN_LISTEN_PORT
-        value: "80"
-
-  # pgAdmin for Development Database Administration
-  - type: web
-    name: f1-app-pgadmin-dev
-    env: image
-    image:
-      url: dpage/pgadmin4:latest
-    plan: free
-    region: oregon
-    healthCheckPath: /misc/ping
-    envVars:
-      - key: PGADMIN_DEFAULT_EMAIL
-        value: admin-dev@f1app.local
-      - key: PGADMIN_DEFAULT_PASSWORD
-        value: devPassword123
-      - key: PGADMIN_CONFIG_SERVER_MODE
-        value: "True"
-      - key: PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED
-        value: "False"
-      - key: PGADMIN_LISTEN_PORT
-        value: "80"
-
 databases:
   # Production Database
   - name: f1-app-db-prod
