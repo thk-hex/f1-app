@@ -24,17 +24,14 @@ export class ChampionsService {
   async getChampions(forceRefresh: boolean = false): Promise<SeasonDto[]> {
     const cacheKey = this.cacheService.getChampionsKey();
 
-    // When forceRefresh is true, skip cache and database checks
     if (!forceRefresh) {
-      // First check Redis cache
       const cachedChampions =
         await this.cacheService.get<SeasonDto[]>(cacheKey);
       if (cachedChampions) {
-        console.log('✅ CACHE HIT: Returning champions data from Redis cache');
+        console.log('Returning champions data from Redis cache');
         return cachedChampions;
       }
 
-      // Then check if we already have data in the database
       const hasData = await this.championsRepository.hasChampionsData();
       if (hasData) {
         console.log(
@@ -42,14 +39,12 @@ export class ChampionsService {
         );
         const dbChampions = await this.championsRepository.findAllChampions();
 
-        // Cache the database result in Redis for faster future access
         await this.cacheService.set(cacheKey, dbChampions, CacheTTL.CHAMPIONS);
 
         return dbChampions;
       }
     }
 
-    // Fetch from API and store in database (either no data exists or forceRefresh is true)
     const logMessage = forceRefresh
       ? 'Force refresh: Fetching champions data from external API and updating database'
       : 'Fetching champions data from external API';
@@ -58,7 +53,6 @@ export class ChampionsService {
     const baseUrl = this.configService.get<string>('BASE_URL');
     const startYear = this.configService.get<number>('GP_START_YEAR');
 
-    // Validate GP_START_YEAR
     F1ValidationUtil.validateGpStartYear(startYear, true);
 
     const seasons = await F1DataProcessorUtil.processYearsSequentially(
@@ -80,7 +74,6 @@ export class ChampionsService {
         const seasonDto = this.championsMapper.mapToSeasonDto(response);
 
         if (seasonDto && seasonDto.season) {
-          // Store in database (upsert will update existing data)
           await this.championsRepository.upsertChampion(seasonDto);
           return seasonDto;
         }
@@ -88,7 +81,6 @@ export class ChampionsService {
       },
     );
 
-    // Cache the API result in Redis
     if (seasons.length > 0) {
       await this.cacheService.set(cacheKey, seasons, CacheTTL.CHAMPIONS);
     }

@@ -71,11 +71,9 @@ describe('RaceWinnersService', () => {
     prismaService = module.get<PrismaService>(PrismaService);
     cacheService = module.get<CacheService>(CacheService);
 
-    // Mock console methods to prevent them from showing in test output
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
-    // Reset cache service mocks
     jest.clearAllMocks();
   });
 
@@ -108,7 +106,6 @@ describe('RaceWinnersService', () => {
         },
       ];
 
-      // Mock Redis cache hit
       (cacheService.get as jest.Mock).mockResolvedValue(mockCachedRaceWinners);
 
       const result = await service.getRaceWinners(year);
@@ -158,7 +155,6 @@ describe('RaceWinnersService', () => {
         },
       ];
 
-      // Mock Redis cache miss but database hit
       (cacheService.get as jest.Mock).mockResolvedValue(null);
       (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue(
         mockCachedRaces,
@@ -178,7 +174,7 @@ describe('RaceWinnersService', () => {
         expect.any(Array),
         1800000,
       );
-      expect(httpService.get).not.toHaveBeenCalled(); // API should not be called when cache exists
+      expect(httpService.get).not.toHaveBeenCalled();
       expect(result).toEqual([
         {
           round: '1',
@@ -199,7 +195,6 @@ describe('RaceWinnersService', () => {
 
     it('should return cached race winners sorted by round number (numeric order)', async () => {
       const year = 2005;
-      // Mock data with rounds that would be incorrectly ordered if using string sorting
       const mockCachedRaces = [
         {
           id: 3,
@@ -260,7 +255,6 @@ describe('RaceWinnersService', () => {
 
       const result = await service.getRaceWinners(year);
 
-      // Verify the results are ordered by round number (2, 3, 10) not string order (10, 2, 3)
       expect(result).toEqual([
         {
           round: '2',
@@ -289,10 +283,9 @@ describe('RaceWinnersService', () => {
     it('should fetch from API and store in database if no cached race winners exist', async () => {
       const year = 2005;
 
-      // Mock empty database
       (prismaService.raceWinner.findMany as jest.Mock).mockResolvedValue([]);
 
-      const baseUrl = 'https://api.jolpi.ca/ergast/f1';
+      const baseUrl = 'example.com';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
         return undefined;
@@ -350,26 +343,22 @@ describe('RaceWinnersService', () => {
         },
       ];
 
-      // Mock the shared utility method
       const makeRateLimitedRequestSpy =
         TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockData);
 
-      // Configure mapper mock to return appropriate DTOs
       (mapper.mapToRaceDtos as jest.Mock).mockReturnValue(mockDtos);
 
-      (prismaService.driver.upsert as jest.Mock).mockResolvedValue({}); // Mock successful driver upsert
-      (prismaService.raceWinner.upsert as jest.Mock).mockResolvedValue({}); // Mock successful race winner upsert
+      (prismaService.driver.upsert as jest.Mock).mockResolvedValue({});
+      (prismaService.raceWinner.upsert as jest.Mock).mockResolvedValue({});
 
       const result = await service.getRaceWinners(year);
 
-      // Verify correct interactions
       expect(prismaService.raceWinner.findMany).toHaveBeenCalledTimes(1);
       expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(
         httpService,
         `${baseUrl}/${year}/results/1.json`,
       );
 
-      // Verify that drivers were upserted first
       expect(prismaService.driver.upsert).toHaveBeenCalledWith({
         where: { driverId: 'fisichella' },
         update: {
@@ -396,7 +385,6 @@ describe('RaceWinnersService', () => {
         },
       });
 
-      // Verify that race winners were upserted with driver references
       expect(prismaService.raceWinner.upsert).toHaveBeenCalledWith({
         where: {
           season_round: {
@@ -435,7 +423,6 @@ describe('RaceWinnersService', () => {
         },
       });
 
-      // Verify the result
       expect(result).toEqual(mockDtos);
     });
 

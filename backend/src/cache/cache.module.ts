@@ -15,14 +15,13 @@ import { CacheController } from './cache.controller';
         const redisHost = configService.get<string>('REDIS_HOST', 'localhost');
         const redisPort = configService.get<number>('REDIS_PORT', 6379);
 
-        // Create Keyv with Redis store - this is the official approach for cache-manager v6
         const keyvRedis = new Keyv({
           store: new KeyvRedis(`redis://${redisHost}:${redisPort}`),
         });
 
         return {
           store: keyvRedis,
-          ttl: 300 * 1000, // TTL in milliseconds for cache-manager v6
+          ttl: 300 * 1000,
           isGlobal: true,
         };
       },

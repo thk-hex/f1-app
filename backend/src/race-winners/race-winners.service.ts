@@ -23,19 +23,16 @@ export class RaceWinnersService {
   ): Promise<RaceDto[]> {
     const cacheKey = this.cacheService.getRaceWinnersKey(year);
 
-    // When forceRefresh is true, skip cache and database checks
     if (!forceRefresh) {
-      // First check Redis cache
       const cachedRaceWinners =
         await this.cacheService.get<RaceDto[]>(cacheKey);
       if (cachedRaceWinners) {
         console.log(
-          `✅ CACHE HIT: Returning race winners for ${year} from Redis cache`,
+          `Returning race winners for ${year} from Redis cache`,
         );
         return cachedRaceWinners;
       }
 
-      // Then check if we already have data in the database for this year
       const cachedRaces = await this.prisma.raceWinner.findMany({
         where: { season: year.toString() },
         include: {
@@ -43,7 +40,6 @@ export class RaceWinnersService {
         },
       });
 
-      // If we have cached data, sort by round number and return it
       if (cachedRaces.length > 0) {
         console.log(
           `Loading race winners for ${year} from database and caching in Redis`,
@@ -60,7 +56,6 @@ export class RaceWinnersService {
           winnerFamilyName: race.driver.familyName,
         }));
 
-        // Cache the database result in Redis for faster future access
         await this.cacheService.set(
           cacheKey,
           raceResults,
@@ -71,7 +66,6 @@ export class RaceWinnersService {
       }
     }
 
-    // Fetch from API and store in database (either no data exists or forceRefresh is true)
     const logMessage = forceRefresh
       ? `Force refresh: Fetching race winners for ${year} from external API and updating database`
       : `Fetching race winners for ${year} from external API`;
@@ -89,10 +83,8 @@ export class RaceWinnersService {
       );
       const raceDtos = this.raceWinnersMapper.mapToRaceDtos(response);
 
-      // Sort by round number for consistent ordering
       raceDtos.sort((a, b) => parseInt(a.round) - parseInt(b.round));
 
-      // Store in database (upsert will update existing data)
       for (const raceDto of raceDtos) {
         await this.prisma.driver.upsert({
           where: { driverId: raceDto.winnerId },
@@ -127,7 +119,6 @@ export class RaceWinnersService {
         });
       }
 
-      // Cache the API result in Redis
       if (raceDtos.length > 0) {
         await this.cacheService.set(cacheKey, raceDtos, CacheTTL.RACE_WINNERS);
       }

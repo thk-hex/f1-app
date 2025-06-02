@@ -26,13 +26,10 @@ export class SchedulerService {
     this.logger.log('Starting weekly F1 data update job...');
 
     try {
-      // Clear cache before updating
       await this.clearAllCache();
 
-      // Update Champions data
       await this.updateChampionsData();
 
-      // Update Race Winners data for current and recent years
       await this.updateRaceWinnersData();
 
       this.logger.log('Weekly F1 data update completed successfully');
@@ -42,26 +39,18 @@ export class SchedulerService {
     }
   }
 
-  /**
-   * Manually trigger the data update (useful for testing or admin actions)
-   */
   async triggerManualUpdate(): Promise<void> {
     this.logger.log('Manual F1 data update triggered...');
     await this.handleWeeklyDataUpdate();
   }
 
-  /**
-   * Clear all cached data before updating
-   */
   private async clearAllCache(): Promise<void> {
     try {
       this.logger.log('Clearing cache before data update...');
 
-      // Clear champions cache
       const championsKey = this.cacheService.getChampionsKey();
       await this.cacheService.del(championsKey);
 
-      // Clear race winners cache for recent years
       const currentYear = new Date().getFullYear();
       const startYear = this.configService.get<number>('GP_START_YEAR', 2005);
 
@@ -76,14 +65,10 @@ export class SchedulerService {
     }
   }
 
-  /**
-   * Update champions data by fetching from the service
-   */
   private async updateChampionsData(): Promise<void> {
     try {
       this.logger.log('Updating champions data...');
 
-      // Force refresh to ensure we get the latest data from API and update database
       const champions = await this.championsService.getChampions(true);
 
       this.logger.log(
@@ -95,9 +80,6 @@ export class SchedulerService {
     }
   }
 
-  /**
-   * Update race winners data for the current year and recent years
-   */
   private async updateRaceWinnersData(): Promise<void> {
     try {
       this.logger.log('Updating race winners data...');
@@ -105,7 +87,7 @@ export class SchedulerService {
       const currentYear = new Date().getFullYear();
       const startYear = Math.max(
         this.configService.get<number>('GP_START_YEAR', 2005),
-        currentYear - 2, // Only update last 3 years for efficiency
+        currentYear, // Only update last year
       );
 
       F1ValidationUtil.validateGpStartYear(startYear);
@@ -116,7 +98,6 @@ export class SchedulerService {
         try {
           this.logger.log(`Updating race winners for year ${year}...`);
 
-          // Force refresh to ensure we get the latest data from API and update database
           const raceWinners = await this.raceWinnersService.getRaceWinners(
             year,
             true,
@@ -127,14 +108,12 @@ export class SchedulerService {
             `Updated ${raceWinners.length} race winners for year ${year}`,
           );
 
-          // Add a small delay between years to avoid overwhelming the API
           await this.delay(500);
         } catch (error) {
           this.logger.error(
             `Failed to update race winners for year ${year}:`,
             error.message,
           );
-          // Continue with other years even if one fails
         }
       }
 
@@ -147,28 +126,20 @@ export class SchedulerService {
     }
   }
 
-  /**
-   * Utility method to add delay between API calls
-   */
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  /**
-   * Get the next scheduled run time
-   */
   getNextScheduledRun(): Date {
     const now = new Date();
     const nextMonday = new Date(now);
 
-    // Calculate next Monday
     const daysUntilNextMonday = (1 + 7 - now.getUTCDay()) % 7;
     nextMonday.setUTCDate(
       now.getUTCDate() + (daysUntilNextMonday === 0 ? 7 : daysUntilNextMonday),
     );
     nextMonday.setUTCHours(12, 0, 0, 0);
 
-    // If it's already past 12 PM UTC on Monday, schedule for next Monday
     if (now.getUTCDay() === 1 && now.getUTCHours() >= 12) {
       nextMonday.setUTCDate(nextMonday.getUTCDate() + 7);
     }
