@@ -61,13 +61,15 @@ This project follows modern full-stack architecture principles:
 ### Using Docker (Recommended)
 
 ```bash
-# Clone the repository
+# 1) Clone the repository
 git clone git@github.com:thk-hex/f1-app.git
 
-# Navigate to infrastructure directory
+# 2) Get the .env file and copy to /backend folder
+
+# 3) Navigate to infrastructure directory
 cd f1-app/infrastructure
 
-# Start all services
+# 4) Start all services
 docker-compose up
 ```
 
