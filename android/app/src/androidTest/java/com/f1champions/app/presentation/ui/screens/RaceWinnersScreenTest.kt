@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.assertIsNotDisplayed
 import com.f1champions.app.domain.model.Race
 import com.f1champions.app.presentation.ui.RaceWinnersUiState
 import com.f1champions.app.presentation.ui.UiState
@@ -23,7 +24,7 @@ class RaceWinnersScreenTest {
     val composeTestRule = createComposeRule()
     
     @Test
-    fun raceWinnersList_displaysCorrectly_whenStateIsSuccess() {
+    fun raceWinnersListDisplaysCorrectlyWhenStateIsSuccess() {
         // Given
         val races = listOf(
             Race("6", "Monaco GP", "Max Verstappen", "verstappen"),
@@ -64,7 +65,7 @@ class RaceWinnersScreenTest {
     }
     
     @Test
-    fun raceWinnersList_showsLoadingIndicator_whenStateIsLoading() {
+    fun raceWinnersListShowsLoadingIndicatorWhenStateIsLoading() {
         // Given
         val viewModel = mockk<RaceWinnersViewModel>()
         val uiState = MutableStateFlow(
@@ -87,11 +88,11 @@ class RaceWinnersScreenTest {
         // Then
         composeTestRule.onNodeWithText("Race Winners (2023)").assertIsDisplayed()
         // And ensure race winner items are not displayed
-        composeTestRule.onNodeWithText("Monaco GP").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Monaco GP").assertIsNotDisplayed()
     }
     
     @Test
-    fun raceWinnersList_showsErrorMessage_whenStateIsError() {
+    fun raceWinnersListShowsErrorMessageWhenStateIsError() {
         // Given
         val viewModel = mockk<RaceWinnersViewModel>()
         val uiState = MutableStateFlow(

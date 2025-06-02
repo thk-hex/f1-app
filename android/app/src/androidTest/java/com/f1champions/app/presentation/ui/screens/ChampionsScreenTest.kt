@@ -44,7 +44,7 @@ class ChampionsScreenTest {
     }
     
     @Test
-    fun `should display all champions correctly and handle click events when state is success with multiple champions`() {
+    fun displayAllChampionsCorrectlyWithMultipleChampions() {
         // Given
         val testSeasons = createTestSeasons()
         val viewModel = createMockViewModel(
@@ -77,7 +77,7 @@ class ChampionsScreenTest {
     }
     
     @Test
-    fun `should handle click events for different champions correctly when state is success with multiple champions`() {
+    fun handleClickEventsForDifferentChampions() {
         // Given
         val testSeasons = createTestSeasons()
         val viewModel = createMockViewModel(
@@ -104,7 +104,7 @@ class ChampionsScreenTest {
     }
     
     @Test
-    fun `should display single champion correctly when state is success with single champion`() {
+    fun displaySingleChampionCorrectly() {
         // Given
         val singleSeason = createSingleSeason()
         val viewModel = createMockViewModel(
@@ -132,7 +132,7 @@ class ChampionsScreenTest {
     }
     
     @Test
-    fun `should handle empty champions list gracefully when state is success with empty list`() {
+    fun handleEmptyChampionsListGracefully() {
         // Given
         val emptySeasons = emptyList<Season>()
         val viewModel = createMockViewModel(
@@ -157,7 +157,7 @@ class ChampionsScreenTest {
     }
     
     @Test
-    fun `should display error message and retry button when state is error`() {
+    fun displayErrorMessageAndRetryButton() {
         // Given
         val errorMessage = "Failed to load champions"
         val viewModel = createMockViewModel(
@@ -185,7 +185,7 @@ class ChampionsScreenTest {
     }
     
     @Test
-    fun `should display network error message correctly when state is network error`() {
+    fun displayNetworkErrorMessageCorrectly() {
         // Given
         val networkErrorMessage = "Network connection failed"
         val viewModel = createMockViewModel(
@@ -208,7 +208,7 @@ class ChampionsScreenTest {
     }
     
     @Test
-    fun `should display API error message correctly when state is API error`() {
+    fun displayApiErrorMessageCorrectly() {
         // Given
         val apiErrorMessage = "API server unavailable"
         val viewModel = createMockViewModel(
@@ -231,7 +231,7 @@ class ChampionsScreenTest {
     }
     
     @Test
-    fun `should display loading indicator when champions are being fetched and state is loading`() {
+    fun displayLoadingIndicatorWhenFetching() {
         // Given
         val viewModel = createMockViewModel(
             ChampionsUiState(UiState.Loading)
