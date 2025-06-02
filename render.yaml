@@ -1,57 +1,60 @@
-services:
-  # Production Backend Service
-  - type: web
-    name: f1-app-backend-prod
-    env: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    plan: free
-    region: oregon
-    branch: main
-    buildCommand: ""
-    healthCheckPath: /api
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: "3000"
-      - key: ALLOWED_ORIGINS
-        value: "https://localhost:3000,https://f1-app-frontend-prod.onrender.com"
-      - key: DATABASE_URL
-        fromDatabase:
-          name: f1-app-db-prod
-          property: connectionString
-      - key: REDIS_URL
-        fromDatabase:
-          name: f1-app-redis-prod
-          property: connectionString
+# PHASE 1: Deploy databases first to avoid secret dependency errors
+# After databases are created successfully, uncomment the services section below and redeploy
 
-  # Development Backend Service  
-  - type: web
-    name: f1-app-backend-dev
-    env: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    plan: free
-    region: oregon
-    branch: dev
-    buildCommand: ""
-    healthCheckPath: /api
-    envVars:
-      - key: NODE_ENV
-        value: development
-      - key: PORT
-        value: "3000"
-      - key: ALLOWED_ORIGINS
-        value: "*"
-      - key: DATABASE_URL
-        fromDatabase:
-          name: f1-app-db-dev
-          property: connectionString
-      - key: REDIS_URL
-        fromDatabase:
-          name: f1-app-redis-dev
-          property: connectionString
+# services:
+#   # Production Backend Service
+#   - type: web
+#     name: f1-app-backend-prod
+#     env: docker
+#     dockerfilePath: ./backend/Dockerfile
+#     dockerContext: ./backend
+#     plan: free
+#     region: oregon
+#     branch: main
+#     buildCommand: ""
+#     healthCheckPath: /api
+#     envVars:
+#       - key: NODE_ENV
+#         value: production
+#       - key: PORT
+#         value: "3000"
+#       - key: ALLOWED_ORIGINS
+#         value: "https://localhost:3000,https://f1-app-frontend-prod.onrender.com"
+#       - key: DATABASE_URL
+#         fromDatabase:
+#           name: f1-app-db-prod
+#           property: connectionString
+#       - key: REDIS_URL
+#         fromDatabase:
+#           name: f1-app-redis-prod
+#           property: connectionString
+
+#   # Development Backend Service  
+#   - type: web
+#     name: f1-app-backend-dev
+#     env: docker
+#     dockerfilePath: ./backend/Dockerfile
+#     dockerContext: ./backend
+#     plan: free
+#     region: oregon
+#     branch: dev
+#     buildCommand: ""
+#     healthCheckPath: /api
+#     envVars:
+#       - key: NODE_ENV
+#         value: development
+#       - key: PORT
+#         value: "3000"
+#       - key: ALLOWED_ORIGINS
+#         value: "*"
+#       - key: DATABASE_URL
+#         fromDatabase:
+#           name: f1-app-db-dev
+#           property: connectionString
+#       - key: REDIS_URL
+#         fromDatabase:
+#           name: f1-app-redis-dev
+#           property: connectionString
 
 databases:
   # Production Database
