@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChampionsRepository, ChampionData } from './champions.repository';
 import { PrismaService } from '../prisma/prisma.service';
-import { SeasonDto } from './dto/season.dto';
 
 describe('ChampionsRepository', () => {
   let repository: ChampionsRepository;
@@ -57,7 +56,9 @@ describe('ChampionsRepository', () => {
         },
       ];
 
-      (mockPrismaService.champion.findMany as jest.Mock).mockResolvedValue(dbChampions);
+      (mockPrismaService.champion.findMany as jest.Mock).mockResolvedValue(
+        dbChampions,
+      );
 
       const result = await repository.findAllChampions();
 
@@ -101,8 +102,12 @@ describe('ChampionsRepository', () => {
         driverId: 'hamilton',
       };
 
-      (mockPrismaService.driver.upsert as jest.Mock).mockResolvedValue(mockDriver);
-      (mockPrismaService.champion.upsert as jest.Mock).mockResolvedValue(mockChampion);
+      (mockPrismaService.driver.upsert as jest.Mock).mockResolvedValue(
+        mockDriver,
+      );
+      (mockPrismaService.champion.upsert as jest.Mock).mockResolvedValue(
+        mockChampion,
+      );
 
       await repository.upsertChampion(championData);
 
@@ -149,4 +154,4 @@ describe('ChampionsRepository', () => {
       expect(mockPrismaService.champion.count).toHaveBeenCalled();
     });
   });
-}); 
+});

@@ -87,4 +87,4 @@ describe('SchedulerController', () => {
       expect(mockSchedulerService.getNextScheduledRun).toHaveBeenCalled();
     });
   });
-}); 
+});

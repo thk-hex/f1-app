@@ -27,9 +27,7 @@ export class RaceWinnersService {
       const cachedRaceWinners =
         await this.cacheService.get<RaceDto[]>(cacheKey);
       if (cachedRaceWinners) {
-        console.log(
-          `Returning race winners for ${year} from Redis cache`,
-        );
+        console.log(`Returning race winners for ${year} from Redis cache`);
         return cachedRaceWinners;
       }
 

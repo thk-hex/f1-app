@@ -93,10 +93,13 @@ describe('SchedulerService', () => {
   });
 
   it('should handle errors gracefully during update', async () => {
-    const originalError = console.error;
-    const loggerErrorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-    const loggerLogSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
-    
+    const loggerErrorSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => {});
+    const loggerLogSpy = jest
+      .spyOn(Logger.prototype, 'log')
+      .mockImplementation(() => {});
+
     mockChampionsService.getChampions.mockRejectedValue(new Error('API Error'));
     mockCacheService.del.mockResolvedValue();
 
@@ -104,7 +107,7 @@ describe('SchedulerService', () => {
 
     expect(mockCacheService.del).toHaveBeenCalled();
     expect(mockChampionsService.getChampions).toHaveBeenCalledWith(true);
-    
+
     loggerErrorSpy.mockRestore();
     loggerLogSpy.mockRestore();
   });

@@ -182,7 +182,7 @@ describe('ChampionsService', () => {
           season: '2005',
           givenName: 'Fernando',
           familyName: 'Alonso',
-          driverId: '', 
+          driverId: '',
         },
       ];
 
@@ -342,7 +342,7 @@ describe('ChampionsService', () => {
         return undefined;
       });
 
-      const mockData2005 = { MRData: {} }; 
+      const mockData2005 = { MRData: {} };
       const mockEmptyDto = new SeasonDto();
 
       TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockData2005);
@@ -360,7 +360,7 @@ describe('ChampionsService', () => {
       const baseUrl = 'example.com';
       (configService.get as jest.Mock).mockImplementation((key) => {
         if (key === 'BASE_URL') return baseUrl;
-        if (key === 'GP_START_YEAR') return 1949; 
+        if (key === 'GP_START_YEAR') return 1949;
         return undefined;
       });
 

@@ -280,4 +280,4 @@ describe('RaceWinnersMapper', () => {
       expect(result).toEqual([]);
     });
   });
-}); 
+});
