@@ -1,0 +1,105 @@
+name: Deploy to Render Development
+
+on:
+  push:
+    branches: [ dev ]
+    paths:
+      - 'backend/**'
+      - 'render.yaml'
+      - '.github/workflows/deploy-render-dev.yml'
+  pull_request:
+    branches: [ dev ]
+    paths:
+      - 'backend/**'
+      - 'render.yaml'
+
+permissions:
+  contents: read
+  id-token: write
+
+# Cancel outdated runs when new commits are pushed to the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  RENDER_SERVICE_ID: ${{ secrets.RENDER_DEV_SERVICE_ID }}
+  RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: f1_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: backend
+      run: npm ci
+      
+    - name: Generate Prisma client
+      working-directory: backend
+      run: npx prisma generate
+      
+    - name: Run database migrations
+      working-directory: backend
+      run: npx prisma migrate deploy
+      env:
+        DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/f1_test?schema=public'
+      
+    - name: Run linter
+      working-directory: backend
+      run: npm run lint
+      
+    - name: Run tests
+      working-directory: backend
+      run: npm run test
+      env:
+        DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/f1_test?schema=public'
+        NODE_ENV: 'test'
+
+  deploy:
+    name: Deploy to Render Dev
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to Render
+      uses: johnbeynon/render-deploy-action@v0.0.8
+      with:
+        service-id: ${{ env.RENDER_SERVICE_ID }}
+        api-key: ${{ env.RENDER_API_KEY }}
+        
+    - name: Wait for deployment to complete
+      run: |
+        echo "Deployment initiated. Check Render dashboard for status."
+        echo "Service URL will be available at: https://f1-app-backend-dev.onrender.com" 
