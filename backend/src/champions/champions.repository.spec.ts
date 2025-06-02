@@ -39,19 +39,19 @@ describe('ChampionsRepository', () => {
     it('should return mapped champions data', async () => {
       const dbChampions = [
         {
-          season: '2021',
-          driver: {
-            driverId: 'hamilton',
-            givenName: 'Lewis',
-            familyName: 'Hamilton',
-          },
-        },
-        {
           season: '2022',
           driver: {
             driverId: 'verstappen',
             givenName: 'Max',
             familyName: 'Verstappen',
+          },
+        },
+        {
+          season: '2021',
+          driver: {
+            driverId: 'hamilton',
+            givenName: 'Lewis',
+            familyName: 'Hamilton',
           },
         },
       ];
@@ -64,20 +64,20 @@ describe('ChampionsRepository', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
-        season: '2021',
-        givenName: 'Lewis',
-        familyName: 'Hamilton',
-        driverId: 'hamilton',
-      });
-      expect(result[1]).toEqual({
         season: '2022',
         givenName: 'Max',
         familyName: 'Verstappen',
         driverId: 'verstappen',
       });
+      expect(result[1]).toEqual({
+        season: '2021',
+        givenName: 'Lewis',
+        familyName: 'Hamilton',
+        driverId: 'hamilton',
+      });
       expect(mockPrismaService.champion.findMany).toHaveBeenCalledWith({
         include: { driver: true },
-        orderBy: { season: 'asc' },
+        orderBy: { season: 'desc' },
       });
     });
   });
