@@ -66,7 +66,8 @@ This project follows modern full-stack architecture principles:
 # 1) Clone the repository
 git clone git@github.com:thk-hex/f1-app.git
 
-# 2) Get the .env file and copy to /backend folder
+# 2) Copy the sampe .env file (to be filled with required info)
+cp backend/.env.sample backend/.env
 
 # 3) Navigate to infrastructure directory
 cd f1-app/infrastructure
@@ -144,7 +145,7 @@ cd android
 2. Configure your environment variables:
    - `DATABASE_URL`: PostgreSQL connection string
    - `BASE_URL`: Ergast F1 API base URL
-   - `GP_START_YEAR`: Starting year for F1 data (optional)
+   - `GP_START_YEAR`: Starting year for F1 data
 
 ### Code Quality
 - **Backend**: ESLint + Prettier for code formatting
@@ -186,5 +187,4 @@ f1-app/
 
 ## 🚧 Roadmap
 
-- [ ] **User Authentication**: User accounts and preferences
 - [ ] **Docker Secrets**: Use docker build secrets to remove credentials from docker
