@@ -60,8 +60,6 @@ services:
     dockerCommand: dpage/pgadmin4:latest
     plan: free
     region: oregon
-    branch: main
-    buildCommand: ""
     healthCheckPath: /misc/ping
     envVars:
       - key: PGADMIN_DEFAULT_EMAIL
@@ -82,8 +80,6 @@ services:
     dockerCommand: dpage/pgadmin4:latest
     plan: free
     region: oregon
-    branch: dev
-    buildCommand: ""
     healthCheckPath: /misc/ping
     envVars:
       - key: PGADMIN_DEFAULT_EMAIL
