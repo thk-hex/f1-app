@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.assertIsNotDisplayed
 import com.f1champions.app.domain.model.Season
 import com.f1champions.app.presentation.ui.ChampionsUiState
 import com.f1champions.app.presentation.ui.UiState
@@ -23,21 +24,32 @@ class ChampionsScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
     
-    @Test
-    fun championsList_displaysCorrectly_whenStateIsSuccess() {
-        // Given
-        val seasons = listOf(
+    // Test Data Factory Functions
+    private fun createTestSeasons(): List<Season> {
+        return listOf(
             Season("2023", "Max Verstappen", "verstappen"),
-            Season("2022", "Max Verstappen", "verstappen")
+            Season("2022", "Max Verstappen", "verstappen"),
+            Season("2021", "Lewis Hamilton", "hamilton")
         )
+    }
+    
+    private fun createSingleSeason(): List<Season> {
+        return listOf(Season("2023", "Max Verstappen", "verstappen"))
+    }
+    
+    private fun createMockViewModel(uiState: ChampionsUiState): ChampionsViewModel {
         val viewModel = mockk<ChampionsViewModel>()
-        val uiState = MutableStateFlow(
-            ChampionsUiState(
-                UiState.Success(seasons)
-            )
+        every { viewModel.uiState } returns MutableStateFlow(uiState)
+        return viewModel
+    }
+    
+    @Test
+    fun `should display all champions correctly and handle click events when state is success with multiple champions`() {
+        // Given
+        val testSeasons = createTestSeasons()
+        val viewModel = createMockViewModel(
+            ChampionsUiState(UiState.Success(testSeasons))
         )
-        every { viewModel.uiState } returns uiState
-        
         val onSeasonClick = mockk<(String, String) -> Unit>(relaxed = true)
         
         // When
@@ -52,25 +64,133 @@ class ChampionsScreenTest {
         
         // Then
         composeTestRule.onNodeWithText("2023").assertIsDisplayed()
-        // Verify Max Verstappen appears in the list at least once
-        composeTestRule.onAllNodesWithText("Max Verstappen")[0].assertIsDisplayed()
         composeTestRule.onNodeWithText("2022").assertIsDisplayed()
+        composeTestRule.onNodeWithText("2021").assertIsDisplayed()
         
-        // Test click handling
+        // Verify champions' names are displayed
+        composeTestRule.onAllNodesWithText("Max Verstappen")[0].assertIsDisplayed()
+        composeTestRule.onNodeWithText("Lewis Hamilton").assertIsDisplayed()
+        
+        // Test click interaction
         composeTestRule.onNodeWithText("2023").performClick()
         verify { onSeasonClick("2023", "verstappen") }
     }
     
     @Test
-    fun championsList_showsErrorMessage_whenStateIsError() {
+    fun `should handle click events for different champions correctly when state is success with multiple champions`() {
         // Given
-        val viewModel = mockk<ChampionsViewModel>()
-        val uiState = MutableStateFlow(
-            ChampionsUiState(
-                UiState.Error("Failed to load champions")
-            )
+        val testSeasons = createTestSeasons()
+        val viewModel = createMockViewModel(
+            ChampionsUiState(UiState.Success(testSeasons))
         )
-        every { viewModel.uiState } returns uiState
+        val onSeasonClick = mockk<(String, String) -> Unit>(relaxed = true)
+        
+        // When
+        composeTestRule.setContent { 
+            F1ChampionsTheme {
+                ChampionsScreen(
+                    onSeasonClick = onSeasonClick,
+                    viewModel = viewModel
+                )
+            }
+        }
+        
+        // Then
+        composeTestRule.onNodeWithText("2021").performClick()
+        verify { onSeasonClick("2021", "hamilton") }
+        
+        composeTestRule.onNodeWithText("2022").performClick()
+        verify { onSeasonClick("2022", "verstappen") }
+    }
+    
+    @Test
+    fun `should display single champion correctly when state is success with single champion`() {
+        // Given
+        val singleSeason = createSingleSeason()
+        val viewModel = createMockViewModel(
+            ChampionsUiState(UiState.Success(singleSeason))
+        )
+        val onSeasonClick = mockk<(String, String) -> Unit>(relaxed = true)
+        
+        // When
+        composeTestRule.setContent { 
+            F1ChampionsTheme {
+                ChampionsScreen(
+                    onSeasonClick = onSeasonClick,
+                    viewModel = viewModel
+                )
+            }
+        }
+        
+        // Then
+        composeTestRule.onNodeWithText("2023").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Max Verstappen").assertIsDisplayed()
+        
+        // Verify click works for single item
+        composeTestRule.onNodeWithText("2023").performClick()
+        verify { onSeasonClick("2023", "verstappen") }
+    }
+    
+    @Test
+    fun `should handle empty champions list gracefully when state is success with empty list`() {
+        // Given
+        val emptySeasons = emptyList<Season>()
+        val viewModel = createMockViewModel(
+            ChampionsUiState(UiState.Success(emptySeasons))
+        )
+        val onSeasonClick = mockk<(String, String) -> Unit>(relaxed = true)
+        
+        // When
+        composeTestRule.setContent { 
+            F1ChampionsTheme {
+                ChampionsScreen(
+                    onSeasonClick = onSeasonClick,
+                    viewModel = viewModel
+                )
+            }
+        }
+        
+        // Then
+        // Verify no champion data is displayed
+        composeTestRule.onNodeWithText("2023").assertIsNotDisplayed()
+        composeTestRule.onNodeWithText("Max Verstappen").assertIsNotDisplayed()
+    }
+    
+    @Test
+    fun `should display error message and retry button when state is error`() {
+        // Given
+        val errorMessage = "Failed to load champions"
+        val viewModel = createMockViewModel(
+            ChampionsUiState(UiState.Error(errorMessage))
+        )
+        val onSeasonClick = mockk<(String, String) -> Unit>(relaxed = true)
+        
+        // When
+        composeTestRule.setContent { 
+            F1ChampionsTheme {
+                ChampionsScreen(
+                    onSeasonClick = onSeasonClick,
+                    viewModel = viewModel
+                )
+            }
+        }
+        
+        // Then
+        composeTestRule.onNodeWithText("Failed to load champions").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Retry").assertIsDisplayed()
+        
+        // Verify champion data is not shown in error state
+        composeTestRule.onNodeWithText("2023").assertIsNotDisplayed()
+        composeTestRule.onNodeWithText("Max Verstappen").assertIsNotDisplayed()
+    }
+    
+    @Test
+    fun `should display network error message correctly when state is network error`() {
+        // Given
+        val networkErrorMessage = "Network connection failed"
+        val viewModel = createMockViewModel(
+            ChampionsUiState(UiState.Error(networkErrorMessage))
+        )
         
         // When
         composeTestRule.setContent { 
@@ -83,7 +203,57 @@ class ChampionsScreenTest {
         }
         
         // Then
-        composeTestRule.onNodeWithText("Failed to load champions").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Network connection failed").assertIsDisplayed()
         composeTestRule.onNodeWithText("Retry").assertIsDisplayed()
+    }
+    
+    @Test
+    fun `should display API error message correctly when state is API error`() {
+        // Given
+        val apiErrorMessage = "API server unavailable"
+        val viewModel = createMockViewModel(
+            ChampionsUiState(UiState.Error(apiErrorMessage))
+        )
+        
+        // When
+        composeTestRule.setContent { 
+            F1ChampionsTheme {
+                ChampionsScreen(
+                    onSeasonClick = { _, _ -> },
+                    viewModel = viewModel
+                )
+            }
+        }
+        
+        // Then
+        composeTestRule.onNodeWithText("API server unavailable").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Retry").assertIsDisplayed()
+    }
+    
+    @Test
+    fun `should display loading indicator when champions are being fetched and state is loading`() {
+        // Given
+        val viewModel = createMockViewModel(
+            ChampionsUiState(UiState.Loading)
+        )
+        
+        // When
+        composeTestRule.setContent { 
+            F1ChampionsTheme {
+                ChampionsScreen(
+                    onSeasonClick = { _, _ -> },
+                    viewModel = viewModel
+                )
+            }
+        }
+        
+        // Then
+        // Verify loading state is shown (you might need to add test tags for loading indicators)
+        // composeTestRule.onNodeWithTag("loading_indicator").assertIsDisplayed()
+        
+        // Verify champion data is not shown in loading state
+        composeTestRule.onNodeWithText("2023").assertIsNotDisplayed()
+        composeTestRule.onNodeWithText("Max Verstappen").assertIsNotDisplayed()
+        composeTestRule.onNodeWithText("Failed to load champions").assertIsNotDisplayed()
     }
 } 

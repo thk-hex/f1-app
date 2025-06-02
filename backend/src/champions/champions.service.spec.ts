@@ -17,8 +17,8 @@ describe('ChampionsService', () => {
   let mapper: ChampionsMapper;
   let repository: ChampionsRepository;
   let cacheService: CacheService;
-  let consoleErrorSpy: jest.SpyInstance;
-  let consoleLogSpy: jest.SpyInstance;
+  let consoleMocks: ReturnType<typeof TestUtils.mockConsole>;
+  let yearMock: jest.SpyInstance;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -26,18 +26,11 @@ describe('ChampionsService', () => {
         ChampionsService,
         {
           provide: HttpService,
-          useValue: {
-            get: jest.fn(),
-          },
+          useValue: TestUtils.createMockHttpService(),
         },
         {
           provide: ConfigService,
-          useValue: {
-            get: jest.fn((key) => {
-              if (key === 'GP_START_YEAR') return 2005;
-              return undefined;
-            }),
-          },
+          useValue: TestUtils.createMockConfigService(),
         },
         {
           provide: ChampionsMapper,
@@ -55,21 +48,11 @@ describe('ChampionsService', () => {
         },
         {
           provide: PrismaService,
-          useValue: {
-            champion: {
-              findMany: jest.fn(),
-              upsert: jest.fn(),
-            },
-          },
+          useValue: TestUtils.createMockPrismaService(),
         },
         {
           provide: CacheService,
-          useValue: {
-            get: jest.fn(),
-            set: jest.fn(),
-            del: jest.fn(),
-            getChampionsKey: jest.fn().mockReturnValue('champions'),
-          },
+          useValue: TestUtils.createMockCacheService(),
         },
       ],
     }).compile();
@@ -81,363 +64,362 @@ describe('ChampionsService', () => {
     repository = module.get<ChampionsRepository>(ChampionsRepository);
     cacheService = module.get<CacheService>(CacheService);
 
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-
-    jest.spyOn(Date.prototype, 'getFullYear').mockReturnValue(2006);
+    consoleMocks = TestUtils.mockConsole();
+    yearMock = TestUtils.mockCurrentYear(2006);
 
     jest.clearAllMocks();
   });
 
   afterEach(() => {
-    consoleErrorSpy?.mockRestore();
-    consoleLogSpy?.mockRestore();
-    jest.restoreAllMocks();
+    consoleMocks.restore();
+    yearMock.mockRestore();
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  describe('Initialization', () => {
+    describe('when service is created', () => {
+      it('should be defined', () => {
+        // Given/When/Then
+        expect(service).toBeDefined();
+      });
+    });
   });
 
   describe('getChampions', () => {
-    it('should return champions from Redis cache if available', async () => {
-      const mockCachedChampions = [
-        {
-          season: '2005',
-          givenName: 'Fernando',
-          familyName: 'Alonso',
-          driverId: 'alonso',
-        },
-        {
-          season: '2006',
-          givenName: 'Michael',
-          familyName: 'Schumacher',
-          driverId: 'schumacher',
-        },
-      ];
+    describe('Cache Layer Tests', () => {
+      describe('when champions are available in Redis cache', () => {
+        it('should return cached champions without database or API calls', async () => {
+          // Given
+          const cachedChampions = TestUtils.createMultipleSeasons(2, 2005);
+          (cacheService.get as jest.Mock).mockResolvedValue(cachedChampions);
 
-      (cacheService.get as jest.Mock).mockResolvedValue(mockCachedChampions);
+          // When
+          const result = await service.getChampions();
 
-      const result = await service.getChampions();
+          // Then
+          expect(cacheService.get).toHaveBeenCalledWith('champions');
+          expect(repository.hasChampionsData).not.toHaveBeenCalled();
+          expect(repository.findAllChampions).not.toHaveBeenCalled();
+          expect(httpService.get).not.toHaveBeenCalled();
+          expect(result).toEqual(cachedChampions);
+          result.forEach(season => TestUtils.expectValidSeasonDto(season));
+        });
+      });
 
-      expect(cacheService.get).toHaveBeenCalledWith('champions');
-      expect(repository.hasChampionsData).not.toHaveBeenCalled();
-      expect(repository.findAllChampions).not.toHaveBeenCalled();
-      expect(httpService.get).not.toHaveBeenCalled();
-      expect(result).toEqual(mockCachedChampions);
+      describe('when cache is empty but database has data', () => {
+        it('should return database champions and cache them', async () => {
+          // Given
+          const dbChampions = TestUtils.createMultipleSeasons(2, 2005);
+          (cacheService.get as jest.Mock).mockResolvedValue(null);
+          (repository.hasChampionsData as jest.Mock).mockResolvedValue(true);
+          (repository.findAllChampions as jest.Mock).mockResolvedValue(dbChampions);
+
+          // When
+          const result = await service.getChampions();
+
+          // Then
+          expect(cacheService.get).toHaveBeenCalledWith('champions');
+          expect(repository.hasChampionsData).toHaveBeenCalledTimes(1);
+          expect(repository.findAllChampions).toHaveBeenCalledTimes(1);
+          expect(cacheService.set).toHaveBeenCalledWith('champions', dbChampions, 3600000);
+          expect(httpService.get).not.toHaveBeenCalled();
+          expect(result).toEqual(dbChampions);
+        });
+      });
+
+      describe('when cached champions have missing driverId', () => {
+        it('should handle champions with empty driverId gracefully', async () => {
+          // Given
+          const championsWithEmptyDriverId = [TestUtils.createSeasonDto({
+            season: '2005',
+            givenName: 'Fernando',
+            familyName: 'Alonso',
+            driverId: '',
+          })];
+          (cacheService.get as jest.Mock).mockResolvedValue(null);
+          (repository.hasChampionsData as jest.Mock).mockResolvedValue(true);
+          (repository.findAllChampions as jest.Mock).mockResolvedValue(championsWithEmptyDriverId);
+
+          // When
+          const result = await service.getChampions();
+
+          // Then
+          expect(result).toHaveLength(1);
+          expect(result[0].driverId).toBe('');
+          expect(result[0].givenName).toBe('Fernando');
+          expect(result[0].familyName).toBe('Alonso');
+        });
+      });
     });
 
-    it('should return cached champions if they exist in the database', async () => {
-      const mockCachedChampions = [
-        {
-          season: '2005',
-          givenName: 'Fernando',
-          familyName: 'Alonso',
-          driverId: 'alonso',
-        },
-        {
-          season: '2006',
-          givenName: 'Michael',
-          familyName: 'Schumacher',
-          driverId: 'schumacher',
-        },
-      ];
+    describe('API Fetching Tests', () => {
+      beforeEach(() => {
+        (cacheService.get as jest.Mock).mockResolvedValue(null);
+        (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
+      });
 
-      (cacheService.get as jest.Mock).mockResolvedValue(null);
-      (repository.hasChampionsData as jest.Mock).mockResolvedValue(true);
-      (repository.findAllChampions as jest.Mock).mockResolvedValue(
-        mockCachedChampions,
-      );
+      describe('when no cached data exists', () => {
+        it('should fetch from API and store in database', async () => {
+          // Given
+          const baseUrl = 'https://api.formula1.com';
+          (configService.get as jest.Mock).mockImplementation((key) => {
+            if (key === 'BASE_URL') return baseUrl;
+            if (key === 'GP_START_YEAR') return 2005;
+            return undefined;
+          });
 
-      const result = await service.getChampions();
+          const mockApiData2005 = { MRData: { StandingsTable: { season: '2005' } } };
+          const mockApiData2006 = { MRData: { StandingsTable: { season: '2006' } } };
+          
+          const expectedSeasons = TestUtils.createMultipleSeasons(2, 2005);
 
-      expect(cacheService.get).toHaveBeenCalledWith('champions');
-      expect(repository.hasChampionsData).toHaveBeenCalled();
-      expect(repository.findAllChampions).toHaveBeenCalled();
-      expect(cacheService.set).toHaveBeenCalledWith(
-        'champions',
-        mockCachedChampions,
-        3600000,
-      );
-      expect(httpService.get).not.toHaveBeenCalled();
-      expect(result).toEqual([
-        {
-          season: '2005',
-          givenName: 'Fernando',
-          familyName: 'Alonso',
-          driverId: 'alonso',
-        },
-        {
-          season: '2006',
-          givenName: 'Michael',
-          familyName: 'Schumacher',
-          driverId: 'schumacher',
-        },
-      ]);
+          const makeRateLimitedRequestSpy = TestUtils.mockHttpRateLimiterRequest(
+            (httpService, url: string) => {
+              if (url.includes('2005')) return Promise.resolve(mockApiData2005);
+              if (url.includes('2006')) return Promise.resolve(mockApiData2006);
+              return Promise.resolve({});
+            },
+          );
+
+          (mapper.mapToSeasonDto as jest.Mock).mockImplementation((data) => {
+            if (data === mockApiData2005) return expectedSeasons[0];
+            if (data === mockApiData2006) return expectedSeasons[1];
+            return new SeasonDto();
+          });
+
+          (repository.upsertChampion as jest.Mock).mockResolvedValue({});
+
+          // When
+          const result = await service.getChampions();
+
+          // Then
+          expect(repository.hasChampionsData).toHaveBeenCalledTimes(1);
+          expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(
+            httpService,
+            `${baseUrl}/2005/driverstandings/1.json`,
+          );
+          expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(
+            httpService,
+            `${baseUrl}/2006/driverstandings/1.json`,
+          );
+
+          expectedSeasons.forEach(season => {
+            expect(repository.upsertChampion).toHaveBeenCalledWith({
+              season: season.season,
+              givenName: season.givenName,
+              familyName: season.familyName,
+              driverId: season.driverId,
+            });
+          });
+
+          expect(result).toHaveLength(2);
+          result.forEach(season => TestUtils.expectValidSeasonDto(season));
+        });
+      });
+
+      describe('when API request fails for one year', () => {
+        it('should continue processing other years and log the error', async () => {
+          // Given
+          const baseUrl = 'https://api.formula1.com';
+          (configService.get as jest.Mock).mockImplementation((key) => {
+            if (key === 'BASE_URL') return baseUrl;
+            if (key === 'GP_START_YEAR') return 2005;
+            return undefined;
+          });
+
+          const mockApiData2006 = { MRData: { StandingsTable: { season: '2006' } } };
+          const expectedSeason2006 = TestUtils.createSeasonDto({
+            season: '2006',
+            givenName: 'Michael',
+            familyName: 'Schumacher',
+            driverId: 'schumacher',
+          });
+
+          TestUtils.mockHttpRateLimiterRequest((httpService, url: string) => {
+            if (url.includes('2005')) {
+              return Promise.reject(new Error('API error for 2005'));
+            }
+            if (url.includes('2006')) {
+              return Promise.resolve(mockApiData2006);
+            }
+            return Promise.resolve({});
+          });
+
+          (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(expectedSeason2006);
+          (repository.upsertChampion as jest.Mock).mockResolvedValue({});
+
+          // When
+          const result = await service.getChampions();
+
+          // Then
+          expect(consoleMocks.error).toHaveBeenCalledWith(
+            'Error fetching champion standings for 2005:',
+            'API error for 2005',
+          );
+          expect(repository.upsertChampion).toHaveBeenCalledWith({
+            season: '2006',
+            givenName: 'Michael',
+            familyName: 'Schumacher',
+            driverId: 'schumacher',
+          });
+          expect(result).toContainEqual(expectedSeason2006);
+        });
+      });
+
+      describe('when mapper returns empty season data', () => {
+        it('should not store empty seasons and return empty array', async () => {
+          // Given
+          const baseUrl = 'https://api.formula1.com';
+          (configService.get as jest.Mock).mockImplementation((key) => {
+            if (key === 'BASE_URL') return baseUrl;
+            if (key === 'GP_START_YEAR') return 2005;
+            return undefined;
+          });
+
+          const mockApiData = { MRData: {} };
+          const emptySeasonDto = new SeasonDto();
+
+          TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockApiData);
+          (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(emptySeasonDto);
+
+          // When
+          const result = await service.getChampions();
+
+          // Then
+          expect(repository.upsertChampion).not.toHaveBeenCalled();
+          expect(result).toEqual([]);
+        });
+      });
     });
 
-    it('should handle cached champions with missing driverId', async () => {
-      const mockCachedChampions = [
-        {
-          season: '2005',
-          givenName: 'Fernando',
-          familyName: 'Alonso',
-          driverId: '',
-        },
-      ];
-
-      (repository.hasChampionsData as jest.Mock).mockResolvedValue(true);
-      (repository.findAllChampions as jest.Mock).mockResolvedValue(
-        mockCachedChampions,
-      );
-
-      const result = await service.getChampions();
-
-      expect(result).toEqual([
-        {
-          season: '2005',
-          givenName: 'Fernando',
-          familyName: 'Alonso',
-          driverId: '',
-        },
-      ]);
-    });
-
-    it('should fetch from API and store in database if no cached champions exist', async () => {
-      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
-
-      const baseUrl = 'https://example.com';
-      (configService.get as jest.Mock).mockImplementation((key) => {
-        if (key === 'BASE_URL') return baseUrl;
-        if (key === 'GP_START_YEAR') return 2005;
-        return undefined;
+    describe('Configuration Validation Tests', () => {
+      beforeEach(() => {
+        (cacheService.get as jest.Mock).mockResolvedValue(null);
+        (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
       });
 
-      const mockData2005 = { MRData: { StandingsTable: { season: '2005' } } };
-      const mockData2006 = { MRData: { StandingsTable: { season: '2006' } } };
-      const mockDto2005 = new SeasonDto();
-      mockDto2005.season = '2005';
-      mockDto2005.givenName = 'Fernando';
-      mockDto2005.familyName = 'Alonso';
-      mockDto2005.driverId = 'alonso';
+      describe('when BASE_URL is not configured', () => {
+        it('should throw descriptive error', async () => {
+          // Given
+          (configService.get as jest.Mock).mockImplementation((key) => {
+            if (key === 'GP_START_YEAR') return 2005;
+            return undefined; // BASE_URL not configured
+          });
 
-      const mockDto2006 = new SeasonDto();
-      mockDto2006.season = '2006';
-      mockDto2006.givenName = 'Michael';
-      mockDto2006.familyName = 'Schumacher';
-      mockDto2006.driverId = 'schumacher';
-
-      const makeRateLimitedRequestSpy = TestUtils.mockHttpRateLimiterRequest(
-        (httpService, url: string) => {
-          if (url.includes('2005')) return Promise.resolve(mockData2005);
-          if (url.includes('2006')) return Promise.resolve(mockData2006);
-          return Promise.resolve({});
-        },
-      );
-
-      (mapper.mapToSeasonDto as jest.Mock).mockImplementation((data) => {
-        if (data === mockData2005) return mockDto2005;
-        if (data === mockData2006) return mockDto2006;
-        return new SeasonDto();
+          // When/Then
+          await TestUtils.expectAsyncToThrow(
+            () => service.getChampions(),
+            'BASE_URL not configured in .env file'
+          );
+        });
       });
 
-      (repository.upsertChampion as jest.Mock).mockResolvedValue({}); // Mock successful database upsert
+      describe('when GP_START_YEAR is before 1950', () => {
+        it('should throw BadRequestException with clear message', async () => {
+          // Given
+          const baseUrl = 'https://api.formula1.com';
+          (configService.get as jest.Mock).mockImplementation((key) => {
+            if (key === 'BASE_URL') return baseUrl;
+            if (key === 'GP_START_YEAR') return 1949;
+            return undefined;
+          });
 
-      const result = await service.getChampions();
-
-      expect(repository.hasChampionsData).toHaveBeenCalledTimes(1);
-      expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(
-        httpService,
-        `${baseUrl}/2005/driverstandings/1.json`,
-      );
-      expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(
-        httpService,
-        `${baseUrl}/2006/driverstandings/1.json`,
-      );
-
-      expect(repository.upsertChampion).toHaveBeenCalledWith({
-        season: '2005',
-        givenName: 'Fernando',
-        familyName: 'Alonso',
-        driverId: 'alonso',
+          // When/Then
+          await expect(service.getChampions()).rejects.toThrow(BadRequestException);
+          await expect(service.getChampions()).rejects.toThrow(
+            'GP_START_YEAR must be 1950 or later. Formula 1 World Championship started in 1950.',
+          );
+        });
       });
 
-      expect(repository.upsertChampion).toHaveBeenCalledWith({
-        season: '2006',
-        givenName: 'Michael',
-        familyName: 'Schumacher',
-        driverId: 'schumacher',
+      describe('when GP_START_YEAR is after current year', () => {
+        it('should throw BadRequestException with current year info', async () => {
+          // Given
+          const baseUrl = 'https://api.formula1.com';
+          (configService.get as jest.Mock).mockImplementation((key) => {
+            if (key === 'BASE_URL') return baseUrl;
+            if (key === 'GP_START_YEAR') return 2007; // Current year is mocked as 2006
+            return undefined;
+          });
+
+          // When/Then
+          await expect(service.getChampions()).rejects.toThrow(BadRequestException);
+          await expect(service.getChampions()).rejects.toThrow(
+            'GP_START_YEAR cannot be greater than the current year (2006).',
+          );
+        });
       });
 
-      expect(result).toContainEqual(mockDto2005);
-      expect(result).toContainEqual(mockDto2006);
-    });
+      describe('when GP_START_YEAR is 1950 (minimum valid year)', () => {
+        it('should process successfully', async () => {
+          // Given
+          const baseUrl = 'https://api.formula1.com';
+          (configService.get as jest.Mock).mockImplementation((key) => {
+            if (key === 'BASE_URL') return baseUrl;
+            if (key === 'GP_START_YEAR') return 1950;
+            return undefined;
+          });
 
-    it('should throw an error if BASE_URL is not configured', async () => {
-      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
-      (configService.get as jest.Mock).mockImplementation((key) => {
-        if (key === 'GP_START_YEAR') return 2005;
-        return undefined;
+          const mockApiData = { MRData: { StandingsTable: { season: '1950' } } };
+          const expectedSeason = TestUtils.createSeasonDto({
+            season: '1950',
+            givenName: 'Giuseppe',
+            familyName: 'Farina',
+            driverId: 'farina',
+          });
+
+          TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockApiData);
+          (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(expectedSeason);
+          (repository.upsertChampion as jest.Mock).mockResolvedValue({});
+
+          // When
+          const result = await service.getChampions();
+
+          // Then
+          expect(result).toContainEqual(expectedSeason);
+          expect(repository.upsertChampion).toHaveBeenCalledWith({
+            season: '1950',
+            givenName: 'Giuseppe',
+            familyName: 'Farina',
+            driverId: 'farina',
+          });
+        });
       });
 
-      await expect(service.getChampions()).rejects.toThrow(
-        'BASE_URL not configured in .env file',
-      );
-    });
+      describe('when GP_START_YEAR equals current year', () => {
+        it('should process successfully', async () => {
+          // Given
+          const baseUrl = 'https://api.formula1.com';
+          (configService.get as jest.Mock).mockImplementation((key) => {
+            if (key === 'BASE_URL') return baseUrl;
+            if (key === 'GP_START_YEAR') return 2006; // Current year is mocked as 2006
+            return undefined;
+          });
 
-    it('should continue processing years even if one request fails', async () => {
-      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
+          const mockApiData = { MRData: { StandingsTable: { season: '2006' } } };
+          const expectedSeason = TestUtils.createSeasonDto({
+            season: '2006',
+            givenName: 'Michael',
+            familyName: 'Schumacher',
+            driverId: 'schumacher',
+          });
 
-      const baseUrl = 'https://example.com';
-      (configService.get as jest.Mock).mockImplementation((key) => {
-        if (key === 'BASE_URL') return baseUrl;
-        if (key === 'GP_START_YEAR') return 2005;
-        return undefined;
+          TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockApiData);
+          (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(expectedSeason);
+          (repository.upsertChampion as jest.Mock).mockResolvedValue({});
+
+          // When
+          const result = await service.getChampions();
+
+          // Then
+          expect(result).toContainEqual(expectedSeason);
+          expect(repository.upsertChampion).toHaveBeenCalledWith({
+            season: '2006',
+            givenName: 'Michael',
+            familyName: 'Schumacher',
+            driverId: 'schumacher',
+          });
+        });
       });
-
-      const mockData2006 = { MRData: { StandingsTable: { season: '2006' } } };
-      const mockDto2006 = new SeasonDto();
-      mockDto2006.season = '2006';
-      mockDto2006.givenName = 'Michael';
-      mockDto2006.familyName = 'Schumacher';
-      mockDto2006.driverId = 'schumacher';
-
-      TestUtils.mockHttpRateLimiterRequest((httpService, url: string) => {
-        if (url.includes('2005')) {
-          return Promise.reject(new Error('API error for 2005'));
-        }
-        if (url.includes('2006')) {
-          return Promise.resolve(mockData2006);
-        }
-        return Promise.resolve({});
-      });
-
-      (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(mockDto2006);
-      (repository.upsertChampion as jest.Mock).mockResolvedValue({});
-
-      const result = await service.getChampions();
-
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error fetching champion standings for 2005:',
-        'API error for 2005',
-      );
-
-      expect(repository.upsertChampion).toHaveBeenCalledWith({
-        season: '2006',
-        givenName: 'Michael',
-        familyName: 'Schumacher',
-        driverId: 'schumacher',
-      });
-
-      expect(result).toContainEqual(mockDto2006);
-    });
-
-    it('should handle empty season data from mapper', async () => {
-      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
-
-      const baseUrl = 'https://example.com';
-      (configService.get as jest.Mock).mockImplementation((key) => {
-        if (key === 'BASE_URL') return baseUrl;
-        if (key === 'GP_START_YEAR') return 2005;
-        return undefined;
-      });
-
-      const mockData2005 = { MRData: {} };
-      const mockEmptyDto = new SeasonDto();
-
-      TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockData2005);
-      (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(mockEmptyDto);
-
-      const result = await service.getChampions();
-
-      expect(repository.upsertChampion).not.toHaveBeenCalled();
-      expect(result).toEqual([]);
-    });
-
-    it('should throw BadRequestException if GP_START_YEAR is before 1950', async () => {
-      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
-
-      const baseUrl = 'https://example.com';
-      (configService.get as jest.Mock).mockImplementation((key) => {
-        if (key === 'BASE_URL') return baseUrl;
-        if (key === 'GP_START_YEAR') return 1949;
-        return undefined;
-      });
-
-      await expect(service.getChampions()).rejects.toThrow(BadRequestException);
-      await expect(service.getChampions()).rejects.toThrow(
-        'GP_START_YEAR must be 1950 or later. Formula 1 World Championship started in 1950.',
-      );
-    });
-
-    it('should throw BadRequestException if GP_START_YEAR is after current year', async () => {
-      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
-
-      const baseUrl = 'https://example.com';
-      (configService.get as jest.Mock).mockImplementation((key) => {
-        if (key === 'BASE_URL') return baseUrl;
-        if (key === 'GP_START_YEAR') return 2007;
-        return undefined;
-      });
-
-      await expect(service.getChampions()).rejects.toThrow(BadRequestException);
-      await expect(service.getChampions()).rejects.toThrow(
-        'GP_START_YEAR cannot be greater than the current year (2006).',
-      );
-    });
-
-    it('should accept GP_START_YEAR of 1950 (minimum valid year)', async () => {
-      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
-
-      const baseUrl = 'https://example.com';
-      (configService.get as jest.Mock).mockImplementation((key) => {
-        if (key === 'BASE_URL') return baseUrl;
-        if (key === 'GP_START_YEAR') return 1950;
-        return undefined;
-      });
-
-      const mockData1950 = { MRData: { StandingsTable: { season: '1950' } } };
-      const mockDto1950 = new SeasonDto();
-      mockDto1950.season = '1950';
-      mockDto1950.givenName = 'Giuseppe';
-      mockDto1950.familyName = 'Farina';
-      mockDto1950.driverId = 'farina';
-
-      TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockData1950);
-      (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(mockDto1950);
-      (repository.upsertChampion as jest.Mock).mockResolvedValue({});
-
-      const result = await service.getChampions();
-
-      expect(result).toContainEqual(mockDto1950);
-      expect(repository.upsertChampion).toHaveBeenCalled();
-    });
-
-    it('should accept GP_START_YEAR equal to current year', async () => {
-      (repository.hasChampionsData as jest.Mock).mockResolvedValue(false);
-
-      const baseUrl = 'https://example.com';
-      (configService.get as jest.Mock).mockImplementation((key) => {
-        if (key === 'BASE_URL') return baseUrl;
-        if (key === 'GP_START_YEAR') return 2006;
-        return undefined;
-      });
-
-      const mockData2006 = { MRData: { StandingsTable: { season: '2006' } } };
-      const mockDto2006 = new SeasonDto();
-      mockDto2006.season = '2006';
-      mockDto2006.givenName = 'Michael';
-      mockDto2006.familyName = 'Schumacher';
-      mockDto2006.driverId = 'schumacher';
-
-      TestUtils.mockHttpRateLimiterRequest().mockResolvedValue(mockData2006);
-      (mapper.mapToSeasonDto as jest.Mock).mockReturnValue(mockDto2006);
-      (repository.upsertChampion as jest.Mock).mockResolvedValue({});
-
-      const result = await service.getChampions();
-
-      expect(result).toContainEqual(mockDto2006);
-      expect(repository.upsertChampion).toHaveBeenCalled();
     });
   });
 });
