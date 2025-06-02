@@ -18,7 +18,7 @@ export class ChampionsRepository {
       include: {
         driver: true,
       },
-      orderBy: { season: 'asc' },
+      orderBy: { season: 'desc' },
     });
 
     return champions.map((champion) => ({
