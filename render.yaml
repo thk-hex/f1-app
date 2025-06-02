@@ -1,4 +1,3 @@
-
 services:
   # Production Backend Service
   - type: web
@@ -19,13 +18,9 @@ services:
       - key: ALLOWED_ORIGINS
         value: "https://localhost:3000,https://f1-app-frontend-prod.onrender.com"
       - key: DATABASE_URL
-        fromDatabase:
-          name: f1-app-db-prod
-          property: connectionString
+        sync: false
       - key: REDIS_URL
-        fromDatabase:
-          name: f1-app-redis-prod
-          property: connectionString
+        sync: false
 
   # Development Backend Service  
   - type: web
@@ -46,13 +41,9 @@ services:
       - key: ALLOWED_ORIGINS
         value: "*"
       - key: DATABASE_URL
-        fromDatabase:
-          name: f1-app-db-dev
-          property: connectionString
+        sync: false
       - key: REDIS_URL
-        fromDatabase:
-          name: f1-app-redis-dev
-          property: connectionString
+        sync: false
 
 databases:
   # Production Database
