@@ -39,6 +39,7 @@ import com.f1champions.app.domain.model.Race
 import com.f1champions.app.presentation.ui.UiState
 import com.f1champions.app.presentation.ui.components.ErrorMessage
 import com.f1champions.app.presentation.ui.components.LoadingIndicator
+import com.f1champions.app.presentation.ui.components.OfflineIndicator
 import com.f1champions.app.presentation.viewmodel.RaceWinnersViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,21 +72,29 @@ fun RaceWinnersScreen(
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when (val state = uiState.raceWinners) {
-                is UiState.Loading -> LoadingIndicator()
-                is UiState.Error -> ErrorMessage(
-                    message = state.message,
-                    onRetryClick = { viewModel.fetchRaceWinners() }
-                )
-                is UiState.Success -> RaceWinnersList(
-                    races = state.data,
-                    championId = uiState.championId
-                )
+            if (uiState.isOffline) {
+                OfflineIndicator()
+            }
+            
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when (val state = uiState.raceWinners) {
+                    is UiState.Loading -> LoadingIndicator()
+                    is UiState.Error -> ErrorMessage(
+                        message = state.message,
+                        onRetryClick = { viewModel.fetchRaceWinners() }
+                    )
+                    is UiState.Success -> RaceWinnersList(
+                        races = state.data,
+                        championId = uiState.championId
+                    )
+                }
             }
         }
     }
@@ -128,7 +137,6 @@ fun RaceWinnerItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Round number indicator
             Surface(
                 shape = CircleShape,
                 color = if (isChampion) f1Red else MaterialTheme.colorScheme.primary,
@@ -142,8 +150,7 @@ fun RaceWinnerItem(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
-            
-            // Race details
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {

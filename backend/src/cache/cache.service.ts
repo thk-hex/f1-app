@@ -8,18 +8,15 @@ export enum CacheKeys {
 }
 
 export enum CacheTTL {
-  CHAMPIONS = 3600 * 1000, // 1 hour for champions data (in milliseconds)
-  RACE_WINNERS = 1800 * 1000, // 30 minutes for race winners (in milliseconds)
-  DEFAULT = 300 * 1000, // 5 minutes default (in milliseconds)
+  CHAMPIONS = 3600 * 1000, // 1 hour for champions data
+  RACE_WINNERS = 1800 * 1000, // 30 minutes for race winners
+  DEFAULT = 300 * 1000, // 5 minutes default
 }
 
 @Injectable()
 export class CacheService {
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
-  /**
-   * Get cached data by key
-   */
   async get<T>(key: string): Promise<T | undefined> {
     try {
       return await this.cacheManager.get<T>(key);
@@ -29,9 +26,6 @@ export class CacheService {
     }
   }
 
-  /**
-   * Set cached data with TTL
-   */
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     try {
       await this.cacheManager.set(key, value, ttl);
@@ -40,9 +34,6 @@ export class CacheService {
     }
   }
 
-  /**
-   * Delete cached data by key
-   */
   async del(key: string): Promise<void> {
     try {
       await this.cacheManager.del(key);
@@ -51,13 +42,8 @@ export class CacheService {
     }
   }
 
-  /**
-   * Delete cached data by pattern
-   */
   async delByPattern(pattern: string): Promise<void> {
     try {
-      // Note: Pattern deletion is not directly supported in cache-manager v6
-      // This is a simplified implementation that would need Redis-specific logic
       console.warn(
         `Pattern deletion for ${pattern} is not implemented in this cache version`,
       );
@@ -69,9 +55,6 @@ export class CacheService {
     }
   }
 
-  /**
-   * Check if cache is healthy
-   */
   async isHealthy(): Promise<boolean> {
     try {
       const testKey = 'health_check';
@@ -86,9 +69,6 @@ export class CacheService {
     }
   }
 
-  /**
-   * Get cache statistics
-   */
   async getStats(): Promise<any> {
     try {
       // Note: Cache statistics are not directly available in cache-manager v6
@@ -100,16 +80,10 @@ export class CacheService {
     }
   }
 
-  /**
-   * Generate cache key for champions
-   */
   getChampionsKey(): string {
     return CacheKeys.CHAMPIONS;
   }
 
-  /**
-   * Generate cache key for race winners by year
-   */
   getRaceWinnersKey(year: number): string {
     return `${CacheKeys.RACE_WINNERS}:${year}`;
   }

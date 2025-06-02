@@ -31,19 +31,16 @@ export class CacheInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    // Generate cache key
     const cacheKey =
       cacheOptions.key ||
       `${context.getClass().name}:${context.getHandler().name}:${JSON.stringify(request.params)}:${JSON.stringify(request.query)}`;
 
-    // Try to get from cache
     const cachedResult = await this.cacheService.get(cacheKey);
     if (cachedResult !== undefined) {
       console.log(`Cache hit for key: ${cacheKey}`);
       return of(cachedResult);
     }
 
-    // If not in cache, execute method and cache result
     console.log(`Cache miss for key: ${cacheKey}`);
     return next.handle().pipe(
       tap(async (data) => {

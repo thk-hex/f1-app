@@ -3,10 +3,12 @@ package com.f1champions.app.presentation.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.f1champions.app.domain.model.Race
+import com.f1champions.app.domain.repository.F1Repository
 import com.f1champions.app.domain.usecase.GetRaceWinnersUseCase
 import com.f1champions.app.presentation.ui.UiState
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,6 +26,7 @@ class RaceWinnersViewModelTest {
     
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var getRaceWinnersUseCase: GetRaceWinnersUseCase
+    private lateinit var repository: F1Repository
     private lateinit var savedStateHandle: SavedStateHandle
     private lateinit var viewModel: RaceWinnersViewModel
     
@@ -34,10 +37,14 @@ class RaceWinnersViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         getRaceWinnersUseCase = mockk()
+        repository = mockk()
         savedStateHandle = SavedStateHandle().apply {
             set("season", testSeason)
             set("championId", testChampionId)
         }
+        
+        // Default network connectivity behavior
+        every { repository.observeNetworkConnectivity() } returns flowOf(true)
     }
     
     @After
@@ -55,7 +62,7 @@ class RaceWinnersViewModelTest {
         coEvery { getRaceWinnersUseCase(testSeason) } returns flowOf(Result.success(races))
         
         // When
-        viewModel = RaceWinnersViewModel(getRaceWinnersUseCase, savedStateHandle)
+        viewModel = RaceWinnersViewModel(getRaceWinnersUseCase, repository, savedStateHandle)
         
         // Then
         viewModel.uiState.test {
@@ -81,7 +88,7 @@ class RaceWinnersViewModelTest {
         coEvery { getRaceWinnersUseCase(testSeason) } returns flowOf(Result.failure(exception))
         
         // When
-        viewModel = RaceWinnersViewModel(getRaceWinnersUseCase, savedStateHandle)
+        viewModel = RaceWinnersViewModel(getRaceWinnersUseCase, repository, savedStateHandle)
         
         // Then
         viewModel.uiState.test {

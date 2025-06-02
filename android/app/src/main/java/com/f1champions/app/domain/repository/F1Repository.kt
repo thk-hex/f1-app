@@ -7,4 +7,5 @@ import kotlinx.coroutines.flow.Flow
 interface F1Repository {
     fun getChampions(): Flow<Result<List<Season>>>
     fun getRaceWinners(year: String): Flow<Result<List<Race>>>
+    fun observeNetworkConnectivity(): Flow<Boolean>
 } 

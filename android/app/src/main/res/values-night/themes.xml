@@ -1,5 +1,4 @@
 <resources>
-    <!-- Material 3 Dark Theme -->
     <style name="Theme.F1Champions" parent="Theme.Material3.DayNight">
         <item name="colorPrimary">@color/md_theme_dark_primary</item>
         <item name="colorOnPrimary">@color/md_theme_dark_onPrimary</item>
@@ -28,8 +27,6 @@
         <item name="colorSurfaceInverse">@color/md_theme_dark_inverseSurface</item>
         <item name="colorOnSurfaceInverse">@color/md_theme_dark_inverseOnSurface</item>
         <item name="colorPrimaryInverse">@color/md_theme_dark_inversePrimary</item>
-        
-        <!-- Status Bar Configuration -->
         <item name="android:statusBarColor">@color/md_theme_dark_surface</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:navigationBarColor">@color/md_theme_dark_surface</item>

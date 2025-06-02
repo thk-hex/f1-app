@@ -17,49 +17,58 @@ export class RaceWinnersService {
     private readonly cacheService: CacheService,
   ) {}
 
-  async getRaceWinners(year: number): Promise<RaceDto[]> {
+  async getRaceWinners(
+    year: number,
+    forceRefresh: boolean = false,
+  ): Promise<RaceDto[]> {
     const cacheKey = this.cacheService.getRaceWinnersKey(year);
 
-    // First check Redis cache
-    const cachedRaceWinners = await this.cacheService.get<RaceDto[]>(cacheKey);
-    if (cachedRaceWinners) {
-      console.log(`Returning race winners for ${year} from Redis cache`);
-      return cachedRaceWinners;
+    if (!forceRefresh) {
+      const cachedRaceWinners =
+        await this.cacheService.get<RaceDto[]>(cacheKey);
+      if (cachedRaceWinners) {
+        console.log(`Returning race winners for ${year} from Redis cache`);
+        return cachedRaceWinners;
+      }
+
+      const cachedRaces = await this.prisma.raceWinner.findMany({
+        where: { season: year.toString() },
+        include: {
+          driver: true,
+        },
+      });
+
+      if (cachedRaces.length > 0) {
+        console.log(
+          `Loading race winners for ${year} from database and caching in Redis`,
+        );
+        const sortedRaces = cachedRaces.sort(
+          (a, b) => parseInt(a.round) - parseInt(b.round),
+        );
+
+        const raceResults = sortedRaces.map((race) => ({
+          round: race.round,
+          gpName: race.gpName,
+          winnerId: race.driver.driverId,
+          winnerGivenName: race.driver.givenName,
+          winnerFamilyName: race.driver.familyName,
+        }));
+
+        await this.cacheService.set(
+          cacheKey,
+          raceResults,
+          CacheTTL.RACE_WINNERS,
+        );
+
+        return raceResults;
+      }
     }
 
-    // Then check if we already have data in the database for this year
-    const cachedRaces = await this.prisma.raceWinner.findMany({
-      where: { season: year.toString() },
-      include: {
-        driver: true,
-      },
-    });
+    const logMessage = forceRefresh
+      ? `Force refresh: Fetching race winners for ${year} from external API and updating database`
+      : `Fetching race winners for ${year} from external API`;
+    console.log(logMessage);
 
-    // If we have cached data, sort by round number and return it
-    if (cachedRaces.length > 0) {
-      console.log(
-        `Loading race winners for ${year} from database and caching in Redis`,
-      );
-      const sortedRaces = cachedRaces.sort(
-        (a, b) => parseInt(a.round) - parseInt(b.round),
-      );
-
-      const raceResults = sortedRaces.map((race) => ({
-        round: race.round,
-        gpName: race.gpName,
-        winnerId: race.driver.driverId,
-        winnerGivenName: race.driver.givenName,
-        winnerFamilyName: race.driver.familyName,
-      }));
-
-      // Cache the database result in Redis for faster future access
-      await this.cacheService.set(cacheKey, raceResults, CacheTTL.RACE_WINNERS);
-
-      return raceResults;
-    }
-
-    // If no cached data, fetch from API and store in database
-    console.log(`Fetching race winners for ${year} from external API`);
     const baseUrl = this.configService.get<string>('BASE_URL');
     F1ValidationUtil.validateBaseUrl(baseUrl);
 
@@ -72,10 +81,8 @@ export class RaceWinnersService {
       );
       const raceDtos = this.raceWinnersMapper.mapToRaceDtos(response);
 
-      // Sort by round number for consistent ordering
       raceDtos.sort((a, b) => parseInt(a.round) - parseInt(b.round));
 
-      // Store in database
       for (const raceDto of raceDtos) {
         await this.prisma.driver.upsert({
           where: { driverId: raceDto.winnerId },
@@ -110,7 +117,6 @@ export class RaceWinnersService {
         });
       }
 
-      // Cache the API result in Redis
       if (raceDtos.length > 0) {
         await this.cacheService.set(cacheKey, raceDtos, CacheTTL.RACE_WINNERS);
       }

@@ -7,7 +7,6 @@ export class RaceWinnersMapper {
   mapToRaceDto(data: any, raceIndex: number): RaceDto {
     const dto = new RaceDto();
 
-    // Access the race at the specified index
     const race = data.MRData?.RaceTable?.Races?.[raceIndex];
 
     if (!race) {
@@ -17,7 +16,6 @@ export class RaceWinnersMapper {
     dto.round = race.round || '';
     dto.gpName = race.raceName || '';
 
-    // Winner is in position 1 (index 0) of the Results array
     const winner = race.Results?.[0];
 
     if (winner) {
@@ -26,7 +24,6 @@ export class RaceWinnersMapper {
       dto.winnerFamilyName = winner.Driver?.familyName || '';
     }
 
-    // Use class-transformer to ensure proper instance creation
     return plainToInstance(RaceDto, dto, { excludeExtraneousValues: true });
   }
 

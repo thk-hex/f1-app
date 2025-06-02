@@ -2,11 +2,16 @@ package com.f1champions.app.data.repository
 
 import app.cash.turbine.test
 import com.f1champions.app.data.api.F1ApiService
+import com.f1champions.app.data.local.dao.RaceDao
+import com.f1champions.app.data.local.dao.SeasonDao
 import com.f1champions.app.data.model.RaceDto
 import com.f1champions.app.data.model.SeasonDto
+import com.f1champions.app.data.network.NetworkConnectivityChecker
 import com.google.common.truth.Truth.assertThat
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -15,12 +20,31 @@ import java.io.IOException
 class F1RepositoryImplTest {
     
     private lateinit var apiService: F1ApiService
+    private lateinit var seasonDao: SeasonDao
+    private lateinit var raceDao: RaceDao
+    private lateinit var networkChecker: NetworkConnectivityChecker
     private lateinit var repository: F1RepositoryImpl
     
     @Before
     fun setup() {
         apiService = mockk()
-        repository = F1RepositoryImpl(apiService)
+        seasonDao = mockk()
+        raceDao = mockk()
+        networkChecker = mockk()
+        
+        // Default network behavior
+        every { networkChecker.isNetworkAvailable() } returns true
+        every { networkChecker.observeNetworkConnectivity() } returns flowOf(true)
+        
+        // Default empty cache behavior
+        coEvery { seasonDao.getAllSeasons() } returns flowOf(emptyList())
+        coEvery { raceDao.getRacesByYearSync(any()) } returns emptyList()
+        coEvery { seasonDao.deleteAllSeasons() } returns Unit
+        coEvery { seasonDao.insertSeasons(any()) } returns Unit
+        coEvery { raceDao.deleteRacesByYear(any()) } returns Unit
+        coEvery { raceDao.insertRaces(any()) } returns Unit
+        
+        repository = F1RepositoryImpl(apiService, seasonDao, raceDao, networkChecker)
     }
     
     @Test
@@ -48,7 +72,7 @@ class F1RepositoryImplTest {
     }
     
     @Test
-    fun `getChampions should return failure when API call fails`() = runTest {
+    fun `getChampions should return failure when API call fails and no cache`() = runTest {
         // Given
         val exception = IOException("Network error")
         coEvery { apiService.getChampions() } throws exception
@@ -90,7 +114,7 @@ class F1RepositoryImplTest {
     }
     
     @Test
-    fun `getRaceWinners should return failure when API call fails`() = runTest {
+    fun `getRaceWinners should return failure when API call fails and no cache`() = runTest {
         // Given
         val exception = IOException("Network error")
         coEvery { apiService.getRaceWinners("2023") } throws exception

@@ -27,6 +27,7 @@ import com.f1champions.app.domain.model.Season
 import com.f1champions.app.presentation.ui.UiState
 import com.f1champions.app.presentation.ui.components.ErrorMessage
 import com.f1champions.app.presentation.ui.components.LoadingIndicator
+import com.f1champions.app.presentation.ui.components.OfflineIndicator
 import com.f1champions.app.presentation.viewmodel.ChampionsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,21 +45,29 @@ fun ChampionsScreen(
             )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when (val state = uiState.champions) {
-                is UiState.Loading -> LoadingIndicator()
-                is UiState.Error -> ErrorMessage(
-                    message = state.message,
-                    onRetryClick = { viewModel.fetchChampions() }
-                )
-                is UiState.Success -> ChampionsList(
-                    champions = state.data,
-                    onSeasonClick = onSeasonClick
-                )
+            if (uiState.isOffline) {
+                OfflineIndicator()
+            }
+            
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when (val state = uiState.champions) {
+                    is UiState.Loading -> LoadingIndicator()
+                    is UiState.Error -> ErrorMessage(
+                        message = state.message,
+                        onRetryClick = { viewModel.fetchChampions() }
+                    )
+                    is UiState.Success -> ChampionsList(
+                        champions = state.data,
+                        onSeasonClick = onSeasonClick
+                    )
+                }
             }
         }
     }
