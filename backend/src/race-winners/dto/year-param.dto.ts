@@ -12,11 +12,11 @@ export class YearParamDto {
   })
   @Transform(({ value }) => parseInt(value))
   @IsInt({ message: 'Year must be a valid integer' })
-  @Min(F1ValidationUtil.getMinValidYear(), { 
-    message: `Year must be no earlier than ${F1ValidationUtil.getMinValidYear()}` 
+  @Min(F1ValidationUtil.getMinValidYear(), {
+    message: `Year must be no earlier than ${F1ValidationUtil.getMinValidYear()}`,
   })
-  @Max(new Date().getFullYear(), { 
-    message: `Year must be no later than ${new Date().getFullYear()}` 
+  @Max(new Date().getFullYear(), {
+    message: `Year must be no later than ${new Date().getFullYear()}`,
   })
   year: number;
-} 
+}

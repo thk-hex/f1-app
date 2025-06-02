@@ -22,9 +22,7 @@ export class RaceWinnersController {
     description: 'List of race winners for the specified year',
     type: [RaceDto],
   })
-  async getRaceWinners(
-    @Param() params: YearParamDto,
-  ): Promise<RaceDto[]> {
+  async getRaceWinners(@Param() params: YearParamDto): Promise<RaceDto[]> {
     return this.raceWinnersService.getRaceWinners(params.year);
   }
 }

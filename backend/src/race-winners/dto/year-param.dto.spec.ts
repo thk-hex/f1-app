@@ -19,7 +19,9 @@ describe('YearParamDto', () => {
     const dto = plainToClass(YearParamDto, { year: invalidYear.toString() });
     const errors = await validate(dto);
     expect(errors).toHaveLength(1);
-    expect(errors[0].constraints?.min).toContain(`Year must be no earlier than ${minValidYear}`);
+    expect(errors[0].constraints?.min).toContain(
+      `Year must be no earlier than ${minValidYear}`,
+    );
   });
 
   it('should fail validation for year after current year', async () => {
@@ -27,14 +29,18 @@ describe('YearParamDto', () => {
     const dto = plainToClass(YearParamDto, { year: futureYear.toString() });
     const errors = await validate(dto);
     expect(errors).toHaveLength(1);
-    expect(errors[0].constraints?.max).toContain(`Year must be no later than ${currentYear}`);
+    expect(errors[0].constraints?.max).toContain(
+      `Year must be no later than ${currentYear}`,
+    );
   });
 
   it('should fail validation for non-numeric input', async () => {
     const dto = plainToClass(YearParamDto, { year: 'abc' });
     const errors = await validate(dto);
     expect(errors).toHaveLength(1);
-    expect(errors[0].constraints?.isInt).toContain('Year must be a valid integer');
+    expect(errors[0].constraints?.isInt).toContain(
+      'Year must be a valid integer',
+    );
   });
 
   it('should validate current year', async () => {
@@ -50,4 +56,4 @@ describe('YearParamDto', () => {
     expect(errors).toHaveLength(0);
     expect(dto.year).toBe(minValidYear);
   });
-}); 
+});
