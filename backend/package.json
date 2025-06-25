@@ -20,7 +20,12 @@
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "prisma:migrate": "prisma migrate dev",
-    "db:seed": "ts-node prisma/seed.ts"
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:reset": "prisma migrate reset",
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:setup": "npm run prisma:migrate:deploy && npm run db:seed",
+    "deploy:setup": "npm run prisma:generate && npm run build",
+    "postinstall": "npm run prisma:generate"
   },
   "dependencies": {
     "@keyv/redis": "^4.4.0",

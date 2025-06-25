@@ -1,37 +1,56 @@
 # --- Build Stage ---
-FROM node:lts as builder
+FROM node:lts-alpine as builder
 
 # Set working directory
 WORKDIR /app
-    
+
+# Copy package files AND prisma schema first
 COPY package*.json ./
+COPY prisma ./prisma
+
+# Install ALL dependencies (including dev) for building
 RUN npm ci
 
-COPY prisma ./prisma
-RUN npx prisma generate
-    
+# Copy source code
 COPY . .
 
+# Build the application
 RUN npm run build
 
 # --- Runtime Stage ---
-FROM node:lts-slim
-    
+FROM node:lts-alpine
+
+# Install necessary packages for Prisma
+RUN apk add --no-cache openssl libc6-compat
+
 WORKDIR /app
 
-# Install OpenSSL for Prisma
-RUN apt-get update -y && apt-get install -y openssl
-    
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nestjs -u 1001
 
+# Copy package files and prisma schema for production install
+COPY --from=builder --chown=nestjs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
+
+# Install only production dependencies (postinstall can now find prisma schema)
+RUN npm ci --only=production
+
+# Copy built application from builder stage
+COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
+
+# Switch to non-root user
+USER nestjs
+
+# Expose port
 EXPOSE 3000
-ENV NODE_ENV production
 
-RUN adduser --system --group appuser
-RUN chown -R appuser:appuser /app
-USER appuser
+# Set production environment
+ENV NODE_ENV=production
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node --eval "require('http').get('http://localhost:3000/api', (res) => process.exit(res.statusCode === 200 ? 0 : 1))" || exit 1
+
+# Start command with database migration
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]

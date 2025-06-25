@@ -1,0 +1,71 @@
+services:
+  # Production Backend Service
+  - type: web
+    name: f1-app-backend-prod
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: ""
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: ALLOWED_ORIGINS
+        value: "https://localhost:3000,https://f1-app-frontend-prod.onrender.com"
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+  # Development Backend Service  
+  - type: web
+    name: f1-app-backend-dev
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: oregon
+    branch: dev
+    buildCommand: ""
+    healthCheckPath: /api
+    envVars:
+      - key: NODE_ENV
+        value: development
+      - key: PORT
+        value: "3000"
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+databases:
+  # Production Database
+  - name: f1-app-db-prod
+    databaseName: f1_champions_prod
+    user: f1_user_prod
+    plan: free
+    region: oregon
+
+  # Development Database
+  - name: f1-app-db-dev
+    databaseName: f1_champions_dev
+    user: f1_user_dev
+    plan: free
+    region: oregon
+
+  # Production Redis
+  - name: f1-app-redis-prod
+    plan: free
+    region: oregon
+
+  # Development Redis
+  - name: f1-app-redis-dev
+    plan: free
+    region: oregon 

@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { RaceWinnersMapper } from './race-winners.mapper';
 import { PrismaService } from '../prisma/prisma.service';
-import { TestUtils } from '../shared/utils';
+import { TestUtils } from '../shared/utils/test-utils';
 import { CacheService } from '../cache/cache.service';
 
 describe('RaceWinnersService', () => {
