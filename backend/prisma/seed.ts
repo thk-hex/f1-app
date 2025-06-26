@@ -34,7 +34,7 @@ async function main() {
       },
     },
     async (year, apiUrl) => {
-      const response = await HttpRateLimiterUtil.makeRateLimitedRequestWithAxios(apiUrl);
+      const response = await HttpRateLimiterUtil.makeRateLimitedRequest(apiUrl);
       const championDto = championsMapper.mapToSeasonDto(response);
       
       if (championDto && championDto.season) {

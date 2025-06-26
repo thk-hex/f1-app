@@ -355,8 +355,8 @@ describe('RaceWinnersService', () => {
 
       expect(prismaService.raceWinner.findMany).toHaveBeenCalledTimes(1);
       expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(
-        httpService,
         `${baseUrl}/${year}/results/1.json`,
+        { httpService },
       );
 
       expect(prismaService.driver.upsert).toHaveBeenCalledWith({

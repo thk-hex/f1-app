@@ -68,8 +68,8 @@ export class ChampionsService {
       },
       async (year, apiUrl) => {
         const response = await HttpRateLimiterUtil.makeRateLimitedRequest(
-          this.httpService,
           apiUrl,
+          { httpService: this.httpService },
         );
         const seasonDto = this.championsMapper.mapToSeasonDto(response);
 

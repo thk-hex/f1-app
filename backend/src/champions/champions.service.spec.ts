@@ -187,7 +187,7 @@ describe('ChampionsService', () => {
           const expectedSeasons = TestUtils.createMultipleSeasons(2, 2005);
 
           const makeRateLimitedRequestSpy =
-            TestUtils.mockHttpRateLimiterRequest((httpService, url: string) => {
+            TestUtils.mockHttpRateLimiterRequest((url: string, options) => {
               if (url.includes('2005')) return Promise.resolve(mockApiData2005);
               if (url.includes('2006')) return Promise.resolve(mockApiData2006);
               return Promise.resolve({});
@@ -212,12 +212,12 @@ describe('ChampionsService', () => {
           // Then
           expect(repository.hasChampionsData).toHaveBeenCalledTimes(1);
           expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(
-            httpService,
             `${baseUrl}/2005/driverstandings/1.json`,
+            { httpService },
           );
           expect(makeRateLimitedRequestSpy).toHaveBeenCalledWith(
-            httpService,
             `${baseUrl}/2006/driverstandings/1.json`,
+            { httpService },
           );
 
           expectedSeasons.forEach((season) => {
@@ -254,7 +254,7 @@ describe('ChampionsService', () => {
             driverId: 'schumacher',
           });
 
-          TestUtils.mockHttpRateLimiterRequest((httpService, url: string) => {
+          TestUtils.mockHttpRateLimiterRequest((url: string, options) => {
             if (url.includes('2005')) {
               return Promise.reject(new Error('API error for 2005'));
             }

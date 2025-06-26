@@ -1,24 +1,14 @@
-import { HttpRateLimiterUtil } from './http-rate-limiter.util';
+import { HttpRateLimiterUtil, RateLimitedRequestOptions } from './http-rate-limiter.util';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SeasonDto } from '../../champions/dto/season.dto';
 import { RaceDto } from '../../race-winners/dto/race.dto';
 
 export class TestUtils {
   static mockHttpRateLimiterRequest(
-    mockImplementation?: (httpService: any, url: string) => Promise<any>,
+    mockImplementation?: (url: string, options?: RateLimitedRequestOptions) => Promise<any>,
   ) {
     return jest
       .spyOn(HttpRateLimiterUtil, 'makeRateLimitedRequest')
-      .mockImplementation(
-        mockImplementation || jest.fn().mockResolvedValue({}),
-      );
-  }
-
-  static mockHttpRateLimiterRequestWithAxios(
-    mockImplementation?: (url: string) => Promise<any>,
-  ) {
-    return jest
-      .spyOn(HttpRateLimiterUtil, 'makeRateLimitedRequestWithAxios')
       .mockImplementation(
         mockImplementation || jest.fn().mockResolvedValue({}),
       );

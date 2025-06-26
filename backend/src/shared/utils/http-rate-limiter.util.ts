@@ -5,28 +5,42 @@ import axios, { AxiosResponse } from 'axios';
 export interface RateLimitedRequestOptions {
   defaultDelayMs?: number;
   retryOnRateLimit?: boolean;
+  httpService?: HttpService; // Optional: if provided, uses NestJS HttpService, otherwise uses axios
 }
 
 export class HttpRateLimiterUtil {
   private static readonly DEFAULT_DELAY_MS = 250; // 4 requests per second
 
   static async makeRateLimitedRequest(
-    httpService: HttpService,
     url: string,
     options: RateLimitedRequestOptions = {},
   ): Promise<any> {
-    const { defaultDelayMs = this.DEFAULT_DELAY_MS, retryOnRateLimit = true } =
-      options;
+    const { 
+      defaultDelayMs = this.DEFAULT_DELAY_MS, 
+      retryOnRateLimit = true,
+      httpService 
+    } = options;
 
     try {
-      const response = await firstValueFrom(httpService.get(url));
+      let responseData: any;
+      let responseHeaders: any;
 
-      const data = response.data;
-      const headers = response.headers;
+      if (httpService) {
+        // Use NestJS HttpService
+        const response = await firstValueFrom(httpService.get(url));
+        responseData = response.data;
+        responseHeaders = response.headers;
+      } else {
+        // Use axios directly
+        const response: AxiosResponse = await axios.get(url);
+        responseData = response.data;
+        responseHeaders = response.headers;
+      }
 
-      await this.applyRateLimit(headers, defaultDelayMs);
+      // Apply consistent rate limiting logic for both cases
+      await this.applyRateLimit(responseHeaders, defaultDelayMs);
 
-      return data;
+      return responseData;
     } catch (error) {
       if (retryOnRateLimit && this.isRateLimitError(error)) {
         const waitTimeMs = this.extractRetryDelay(error) * 1000;
@@ -36,36 +50,7 @@ export class HttpRateLimiterUtil {
         );
         await this.delay(waitTimeMs);
 
-        return this.makeRateLimitedRequest(httpService, url, options);
-      }
-
-      throw error;
-    }
-  }
-
-  static async makeRateLimitedRequestWithAxios(
-    url: string,
-    options: RateLimitedRequestOptions = {},
-  ): Promise<any> {
-    const { defaultDelayMs = this.DEFAULT_DELAY_MS, retryOnRateLimit = true } =
-      options;
-
-    try {
-      const response: AxiosResponse = await axios.get(url);
-
-      await this.delay(defaultDelayMs);
-
-      return response.data;
-    } catch (error: any) {
-      if (retryOnRateLimit && this.isRateLimitError(error)) {
-        const waitTimeMs = this.extractRetryDelay(error) * 1000;
-
-        console.log(
-          `Rate limit hit, waiting for ${waitTimeMs}ms before retrying...`,
-        );
-        await this.delay(waitTimeMs);
-
-        return this.makeRateLimitedRequestWithAxios(url, options);
+        return this.makeRateLimitedRequest(url, options);
       }
 
       throw error;

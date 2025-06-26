@@ -17,241 +17,245 @@ describe('HttpRateLimiterUtil', () => {
     jest.clearAllMocks();
   });
 
-  describe('makeRateLimitedRequest (NestJS HttpService)', () => {
-    it('should handle rate limiting using retry-after header', async () => {
-      const mockData = { test: 'data' };
-      const mockResponse = {
-        data: mockData,
-        headers: { 'retry-after': '1' },
-        status: 200,
-        statusText: 'OK',
-        config: {} as any,
-      };
-
-      httpService.get.mockReturnValue(of(mockResponse));
-
-      const setTimeoutSpy = jest
-        .spyOn(global, 'setTimeout')
-        .mockImplementation((fn: any) => {
-          fn();
-          return null as any;
-        });
-
-      const result = await HttpRateLimiterUtil.makeRateLimitedRequest(
-        httpService,
-        'test-url',
-      );
-
-      expect(setTimeoutSpy).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-
-      setTimeoutSpy.mockRestore();
-    });
-
-    it('should retry on 429 errors', async () => {
-      const mockData = { test: 'data' };
-      const mockError = {
-        response: {
-          status: 429,
+  describe('makeRateLimitedRequest (unified method)', () => {
+    describe('with NestJS HttpService', () => {
+      it('should handle rate limiting using retry-after header', async () => {
+        const mockData = { test: 'data' };
+        const mockResponse = {
+          data: mockData,
           headers: { 'retry-after': '1' },
-        },
-      };
+          status: 200,
+          statusText: 'OK',
+          config: {} as any,
+        };
 
-      httpService.get
-        .mockReturnValueOnce(throwError(() => mockError))
-        .mockReturnValueOnce(
-          of({
-            data: mockData,
-            headers: {},
-            status: 200,
-            statusText: 'OK',
-            config: {} as any,
-          }),
+        httpService.get.mockReturnValue(of(mockResponse));
+
+        const setTimeoutSpy = jest
+          .spyOn(global, 'setTimeout')
+          .mockImplementation((fn: any) => {
+            fn();
+            return null as any;
+          });
+
+        const result = await HttpRateLimiterUtil.makeRateLimitedRequest(
+          'test-url',
+          { httpService },
         );
 
-      const setTimeoutSpy = jest
-        .spyOn(global, 'setTimeout')
-        .mockImplementation((fn: any) => {
-          fn();
-          return null as any;
-        });
+        expect(setTimeoutSpy).toHaveBeenCalled();
+        expect(result).toEqual(mockData);
 
-      const result = await HttpRateLimiterUtil.makeRateLimitedRequest(
-        httpService,
-        'test-url',
-      );
+        setTimeoutSpy.mockRestore();
+      });
 
-      expect(httpService.get).toHaveBeenCalledTimes(2);
-      expect(setTimeoutSpy).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
+      it('should retry on 429 errors', async () => {
+        const mockData = { test: 'data' };
+        const mockError = {
+          response: {
+            status: 429,
+            headers: { 'retry-after': '1' },
+          },
+        };
 
-      setTimeoutSpy.mockRestore();
+        httpService.get
+          .mockReturnValueOnce(throwError(() => mockError))
+          .mockReturnValueOnce(
+            of({
+              data: mockData,
+              headers: {},
+              status: 200,
+              statusText: 'OK',
+              config: {} as any,
+            }),
+          );
+
+        const setTimeoutSpy = jest
+          .spyOn(global, 'setTimeout')
+          .mockImplementation((fn: any) => {
+            fn();
+            return null as any;
+          });
+
+        const result = await HttpRateLimiterUtil.makeRateLimitedRequest(
+          'test-url',
+          { httpService },
+        );
+
+        expect(httpService.get).toHaveBeenCalledTimes(2);
+        expect(setTimeoutSpy).toHaveBeenCalled();
+        expect(result).toEqual(mockData);
+
+        setTimeoutSpy.mockRestore();
+      });
+
+      it('should apply default rate limiting even without headers', async () => {
+        const mockData = { test: 'data' };
+        const mockResponse = {
+          data: mockData,
+          headers: {},
+          status: 200,
+          statusText: 'OK',
+          config: {} as any,
+        };
+
+        httpService.get.mockReturnValue(of(mockResponse));
+
+        const setTimeoutSpy = jest
+          .spyOn(global, 'setTimeout')
+          .mockImplementation((fn: any) => {
+            fn();
+            return null as any;
+          });
+
+        const result = await HttpRateLimiterUtil.makeRateLimitedRequest(
+          'test-url',
+          { httpService },
+        );
+
+        expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 250);
+        expect(result).toEqual(mockData);
+
+        setTimeoutSpy.mockRestore();
+      });
+
+      it('should handle non-429 errors by rethrowing them', async () => {
+        const mockError = {
+          response: {
+            status: 500,
+            statusText: 'Internal Server Error',
+          },
+        };
+
+        httpService.get.mockReturnValue(throwError(() => mockError));
+
+        await expect(
+          HttpRateLimiterUtil.makeRateLimitedRequest('test-url', { httpService }),
+        ).rejects.toEqual(mockError);
+      });
+
+      it('should use custom delay options', async () => {
+        const mockData = { test: 'data' };
+        const mockResponse = {
+          data: mockData,
+          headers: {},
+          status: 200,
+          statusText: 'OK',
+          config: {} as any,
+        };
+
+        httpService.get.mockReturnValue(of(mockResponse));
+
+        const setTimeoutSpy = jest
+          .spyOn(global, 'setTimeout')
+          .mockImplementation((fn: any) => {
+            fn();
+            return null as any;
+          });
+
+        await HttpRateLimiterUtil.makeRateLimitedRequest(
+          'test-url',
+          { httpService, defaultDelayMs: 500 },
+        );
+
+        expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 500);
+
+        setTimeoutSpy.mockRestore();
+      });
     });
 
-    it('should apply default rate limiting even without headers', async () => {
-      const mockData = { test: 'data' };
-      const mockResponse = {
-        data: mockData,
-        headers: {},
-        status: 200,
-        statusText: 'OK',
-        config: {} as any,
-      };
+    describe('with standalone axios', () => {
+      it('should handle rate limiting with axios and apply header-based delays', async () => {
+        const mockData = { test: 'data' };
+        const mockResponse = {
+          data: mockData,
+          headers: { 'retry-after': '2' },
+        };
 
-      httpService.get.mockReturnValue(of(mockResponse));
+        mockedAxios.get.mockResolvedValue(mockResponse);
 
-      const setTimeoutSpy = jest
-        .spyOn(global, 'setTimeout')
-        .mockImplementation((fn: any) => {
-          fn();
-          return null as any;
-        });
+        const setTimeoutSpy = jest
+          .spyOn(global, 'setTimeout')
+          .mockImplementation((fn: any) => {
+            fn();
+            return null as any;
+          });
 
-      const result = await HttpRateLimiterUtil.makeRateLimitedRequest(
-        httpService,
-        'test-url',
-      );
+        const result = await HttpRateLimiterUtil.makeRateLimitedRequest('test-url');
 
-      expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 250);
-      expect(result).toEqual(mockData);
+        expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 2000); // 2 seconds from retry-after header
+        expect(result).toEqual(mockData);
 
-      setTimeoutSpy.mockRestore();
-    });
+        setTimeoutSpy.mockRestore();
+      });
 
-    it('should handle non-429 errors by rethrowing them', async () => {
-      const mockError = {
-        response: {
-          status: 500,
-          statusText: 'Internal Server Error',
-        },
-      };
+      it('should apply default delay when no headers present', async () => {
+        const mockData = { test: 'data' };
+        const mockResponse = {
+          data: mockData,
+          headers: {},
+        };
 
-      httpService.get.mockReturnValue(throwError(() => mockError));
+        mockedAxios.get.mockResolvedValue(mockResponse);
 
-      await expect(
-        HttpRateLimiterUtil.makeRateLimitedRequest(httpService, 'test-url'),
-      ).rejects.toEqual(mockError);
-    });
+        const setTimeoutSpy = jest
+          .spyOn(global, 'setTimeout')
+          .mockImplementation((fn: any) => {
+            fn();
+            return null as any;
+          });
 
-    it('should use custom delay options', async () => {
-      const mockData = { test: 'data' };
-      const mockResponse = {
-        data: mockData,
-        headers: {},
-        status: 200,
-        statusText: 'OK',
-        config: {} as any,
-      };
+        const result = await HttpRateLimiterUtil.makeRateLimitedRequest('test-url');
 
-      httpService.get.mockReturnValue(of(mockResponse));
+        expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 250);
+        expect(result).toEqual(mockData);
 
-      const setTimeoutSpy = jest
-        .spyOn(global, 'setTimeout')
-        .mockImplementation((fn: any) => {
-          fn();
-          return null as any;
-        });
+        setTimeoutSpy.mockRestore();
+      });
 
-      await HttpRateLimiterUtil.makeRateLimitedRequest(
-        httpService,
-        'test-url',
-        { defaultDelayMs: 500 },
-      );
+      it('should retry on 429 errors with axios', async () => {
+        const mockData = { test: 'data' };
+        const mockError = {
+          response: {
+            status: 429,
+            headers: { 'retry-after': '1' },
+          },
+        };
 
-      expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 500);
+        mockedAxios.get
+          .mockRejectedValueOnce(mockError)
+          .mockResolvedValueOnce({ data: mockData, headers: {} });
 
-      setTimeoutSpy.mockRestore();
-    });
-  });
+        const setTimeoutSpy = jest
+          .spyOn(global, 'setTimeout')
+          .mockImplementation((fn: any) => {
+            fn();
+            return null as any;
+          });
 
-  describe('makeRateLimitedRequestWithAxios (standalone scripts)', () => {
-    it('should handle rate limiting with axios', async () => {
-      const mockData = { test: 'data' };
-      const mockResponse = {
-        data: mockData,
-        headers: {},
-      };
+        const result = await HttpRateLimiterUtil.makeRateLimitedRequest('test-url');
 
-      mockedAxios.get.mockResolvedValue(mockResponse);
+        expect(mockedAxios.get).toHaveBeenCalledTimes(2);
+        expect(setTimeoutSpy).toHaveBeenCalled();
+        expect(result).toEqual(mockData);
 
-      const setTimeoutSpy = jest
-        .spyOn(global, 'setTimeout')
-        .mockImplementation((fn: any) => {
-          fn();
-          return null as any;
-        });
+        setTimeoutSpy.mockRestore();
+      });
 
-      const result =
-        await HttpRateLimiterUtil.makeRateLimitedRequestWithAxios('test-url');
+      it('should handle non-429 errors by rethrowing them with axios', async () => {
+        const mockError = {
+          response: {
+            status: 500,
+            statusText: 'Internal Server Error',
+          },
+        };
 
-      expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 250);
-      expect(result).toEqual(mockData);
+        mockedAxios.get.mockRejectedValue(mockError);
 
-      setTimeoutSpy.mockRestore();
-    });
-
-    it('should retry on 429 errors with axios', async () => {
-      const mockData = { test: 'data' };
-      const mockError = {
-        response: {
-          status: 429,
-          headers: { 'retry-after': '1' },
-        },
-      };
-
-      mockedAxios.get
-        .mockRejectedValueOnce(mockError)
-        .mockResolvedValueOnce({ data: mockData });
-
-      const setTimeoutSpy = jest
-        .spyOn(global, 'setTimeout')
-        .mockImplementation((fn: any) => {
-          fn();
-          return null as any;
-        });
-
-      const result =
-        await HttpRateLimiterUtil.makeRateLimitedRequestWithAxios('test-url');
-
-      expect(mockedAxios.get).toHaveBeenCalledTimes(2);
-      expect(setTimeoutSpy).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
-
-      setTimeoutSpy.mockRestore();
-    });
-
-    it('should handle non-429 errors by rethrowing them with axios', async () => {
-      const mockError = {
-        response: {
-          status: 500,
-          statusText: 'Internal Server Error',
-        },
-      };
-
-      mockedAxios.get.mockRejectedValue(mockError);
-
-      await expect(
-        HttpRateLimiterUtil.makeRateLimitedRequestWithAxios('test-url'),
-      ).rejects.toEqual(mockError);
-    });
-
-    it('should disable retry on rate limit when configured', async () => {
-      const mockError = {
-        response: {
-          status: 429,
-          headers: { 'retry-after': '1' },
-        },
-      };
-
-      mockedAxios.get.mockRejectedValue(mockError);
-
-      await expect(
-        HttpRateLimiterUtil.makeRateLimitedRequestWithAxios('test-url', {
-          retryOnRateLimit: false,
-        }),
-      ).rejects.toEqual(mockError);
-
-      expect(mockedAxios.get).toHaveBeenCalledTimes(1);
+        await expect(
+          HttpRateLimiterUtil.makeRateLimitedRequest('test-url'),
+        ).rejects.toEqual(mockError);
+      });
     });
   });
 });

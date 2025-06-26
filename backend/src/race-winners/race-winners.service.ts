@@ -76,8 +76,8 @@ export class RaceWinnersService {
 
     try {
       const response = await HttpRateLimiterUtil.makeRateLimitedRequest(
-        this.httpService,
         apiUrl,
+        { httpService: this.httpService },
       );
       const raceDtos = this.raceWinnersMapper.mapToRaceDtos(response);
 
