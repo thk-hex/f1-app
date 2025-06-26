@@ -48,7 +48,7 @@ async function bootstrap() {
     origin: process.env.ALLOWED_ORIGINS?.split(',') || [
       'http://localhost:3000',
     ],
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: false,
   });
