@@ -1,12 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller } from '@nestjs/common';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
-  }
+  // This controller can be used for general app-level endpoints if needed
+  // Currently, all specific functionality is handled by dedicated modules
 }

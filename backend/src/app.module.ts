@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ChampionsModule } from './champions/champions.module';
 import { RaceWinnersModule } from './race-winners/race-winners.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -26,6 +25,6 @@ import { SecurityModule } from './security/security.module';
     SecurityModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}

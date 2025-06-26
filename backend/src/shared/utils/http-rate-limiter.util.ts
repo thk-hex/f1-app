@@ -15,10 +15,10 @@ export class HttpRateLimiterUtil {
     url: string,
     options: RateLimitedRequestOptions = {},
   ): Promise<any> {
-    const { 
-      defaultDelayMs = this.DEFAULT_DELAY_MS, 
+    const {
+      defaultDelayMs = this.DEFAULT_DELAY_MS,
       retryOnRateLimit = true,
-      httpService 
+      httpService,
     } = options;
 
     try {

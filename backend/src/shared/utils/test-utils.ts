@@ -1,11 +1,17 @@
-import { HttpRateLimiterUtil, RateLimitedRequestOptions } from './http-rate-limiter.util';
+import {
+  HttpRateLimiterUtil,
+  RateLimitedRequestOptions,
+} from './http-rate-limiter.util';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SeasonDto } from '../../champions/dto/season.dto';
 import { RaceDto } from '../../race-winners/dto/race.dto';
 
 export class TestUtils {
   static mockHttpRateLimiterRequest(
-    mockImplementation?: (url: string, options?: RateLimitedRequestOptions) => Promise<any>,
+    mockImplementation?: (
+      url: string,
+      options?: RateLimitedRequestOptions,
+    ) => Promise<any>,
   ) {
     return jest
       .spyOn(HttpRateLimiterUtil, 'makeRateLimitedRequest')

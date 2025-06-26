@@ -187,7 +187,7 @@ describe('ChampionsService', () => {
           const expectedSeasons = TestUtils.createMultipleSeasons(2, 2005);
 
           const makeRateLimitedRequestSpy =
-            TestUtils.mockHttpRateLimiterRequest((url: string, options) => {
+            TestUtils.mockHttpRateLimiterRequest((url: string) => {
               if (url.includes('2005')) return Promise.resolve(mockApiData2005);
               if (url.includes('2006')) return Promise.resolve(mockApiData2006);
               return Promise.resolve({});
@@ -254,7 +254,7 @@ describe('ChampionsService', () => {
             driverId: 'schumacher',
           });
 
-          TestUtils.mockHttpRateLimiterRequest((url: string, options) => {
+          TestUtils.mockHttpRateLimiterRequest((url: string) => {
             if (url.includes('2005')) {
               return Promise.reject(new Error('API error for 2005'));
             }

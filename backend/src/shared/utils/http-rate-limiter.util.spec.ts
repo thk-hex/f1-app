@@ -130,7 +130,9 @@ describe('HttpRateLimiterUtil', () => {
         httpService.get.mockReturnValue(throwError(() => mockError));
 
         await expect(
-          HttpRateLimiterUtil.makeRateLimitedRequest('test-url', { httpService }),
+          HttpRateLimiterUtil.makeRateLimitedRequest('test-url', {
+            httpService,
+          }),
         ).rejects.toEqual(mockError);
       });
 
@@ -153,10 +155,10 @@ describe('HttpRateLimiterUtil', () => {
             return null as any;
           });
 
-        await HttpRateLimiterUtil.makeRateLimitedRequest(
-          'test-url',
-          { httpService, defaultDelayMs: 500 },
-        );
+        await HttpRateLimiterUtil.makeRateLimitedRequest('test-url', {
+          httpService,
+          defaultDelayMs: 500,
+        });
 
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 500);
 
@@ -181,7 +183,8 @@ describe('HttpRateLimiterUtil', () => {
             return null as any;
           });
 
-        const result = await HttpRateLimiterUtil.makeRateLimitedRequest('test-url');
+        const result =
+          await HttpRateLimiterUtil.makeRateLimitedRequest('test-url');
 
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 2000); // 2 seconds from retry-after header
         expect(result).toEqual(mockData);
@@ -205,7 +208,8 @@ describe('HttpRateLimiterUtil', () => {
             return null as any;
           });
 
-        const result = await HttpRateLimiterUtil.makeRateLimitedRequest('test-url');
+        const result =
+          await HttpRateLimiterUtil.makeRateLimitedRequest('test-url');
 
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 250);
         expect(result).toEqual(mockData);
@@ -233,7 +237,8 @@ describe('HttpRateLimiterUtil', () => {
             return null as any;
           });
 
-        const result = await HttpRateLimiterUtil.makeRateLimitedRequest('test-url');
+        const result =
+          await HttpRateLimiterUtil.makeRateLimitedRequest('test-url');
 
         expect(mockedAxios.get).toHaveBeenCalledTimes(2);
         expect(setTimeoutSpy).toHaveBeenCalled();
