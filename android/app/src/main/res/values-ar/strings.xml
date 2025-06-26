@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">أبطال الفورمولا 1</string>
+    <string name="welcome_screen_title">أبطال الفورمولا 1</string>
+    <string name="welcome_screen_description">استكشف أبطال الفورمولا 1 عبر السنين</string>
+    <string name="champions_screen_title">أبطال الفورمولا 1</string>
+    <string name="race_winners_screen_title">الفائزون بالسباقات (%1$s)</string>
+    <string name="loading">جاري التحميل…</string>
+    <string name="error_loading_data">خطأ في تحميل البيانات</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="offline_mode_indicator">الوضع غير المتصل - عرض البيانات المحفوظة مؤقتاً</string>
+</resources> 

@@ -139,8 +139,7 @@ fun RaceWinnerItem(
         ) {
             Surface(
                 shape = CircleShape,
-                color = if (isChampion) f1Red else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(end = 16.dp)
+                color = if (isChampion) f1Red else MaterialTheme.colorScheme.primary
             ) {
                 Text(
                     text = race.round,
@@ -151,6 +150,8 @@ fun RaceWinnerItem(
                 )
             }
 
+            Spacer(modifier = Modifier.width(16.dp))
+            
             Column(
                 modifier = Modifier.weight(1f)
             ) {

@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Campeões F1</string>
+    <string name="welcome_screen_title">Campeões F1</string>
+    <string name="welcome_screen_description">Explore os campeões da Fórmula 1 ao longo dos anos</string>
+    <string name="champions_screen_title">Campeões F1</string>
+    <string name="race_winners_screen_title">Vencedores das Corridas (%1$s)</string>
+    <string name="loading">Carregando…</string>
+    <string name="error_loading_data">Erro ao carregar dados</string>
+    <string name="retry">Tentar novamente</string>
+    <string name="offline_mode_indicator">Modo Offline - Mostrando dados em cache</string>
+</resources> 

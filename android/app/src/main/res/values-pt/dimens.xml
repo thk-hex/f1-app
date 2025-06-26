@@ -1,0 +1,21 @@
+<resources>
+    <!-- Standard spacing values for Portuguese -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+    
+    <!-- Card and component spacing -->
+    <dimen name="card_padding">16dp</dimen>
+    <dimen name="card_margin">8dp</dimen>
+    
+    <!-- Text spacing - Portuguese text may be longer -->
+    <dimen name="text_margin_horizontal">18dp</dimen>
+    <dimen name="text_margin_vertical">8dp</dimen>
+    
+    <!-- Icon sizes -->
+    <dimen name="icon_size_small">16dp</dimen>
+    <dimen name="icon_size_medium">24dp</dimen>
+    <dimen name="icon_size_large">32dp</dimen>
+</resources> 

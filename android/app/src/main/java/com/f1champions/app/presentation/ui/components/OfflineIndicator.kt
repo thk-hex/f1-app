@@ -47,7 +47,7 @@ fun OfflineIndicator(
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(start = 8.dp)
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
         }
     }
